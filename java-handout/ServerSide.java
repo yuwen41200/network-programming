@@ -61,43 +61,61 @@ public class ServerSide {
 		dateFormat = DateFormat.getDateTimeInstance();
 		serverSocket = new ServerSocket(5600);
 		textArea.append("The server is started at " + dateFormat.format(new Date()) + ".\n");
-		run(serverSocket);
-	}
-
-	private void run(ServerSocket serverSocket) {
 		Socket socket = serverSocket.accept();
-		DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-		DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-		InetAddress inetAddress = socket.getInetAddress();
-		textArea.append(dateFormat.format(new Date()) + " Begin a connection from " +
-				inetAddress.getHostName() + " (" + inetAddress.getHostAddress() + ").\n");
-		Timer timer = new Timer();
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() { running = false; }
-		}, 60000);
-		running = true;
-		while (running) {
-			String inputMessage = dataInputStream.readUTF();
-			textArea.append(dateFormat.format(new Date()) + " Input Message: " + inputMessage + "\n");
-			String outputMessage = inputMessage.toUpperCase();
-			dataOutputStream.writeUTF(outputMessage);
-			textArea.append(dateFormat.format(new Date()) + " Output Message: " + outputMessage + "\n");
-		}
-		timer.cancel();
-		socket.close();
-		textArea.append(dateFormat.format(new Date()) + " Close the connection from " +
-				inetAddress.getHostName() + " (" + inetAddress.getHostAddress() + ").\n");
+		RunServer runServer = new RunServer(socket);
+		Thread thread = new Thread(runServer);
+		thread.start();
 	}
 
 	public void stop() throws IOException {
 		if (serverSocket != null)
 			serverSocket.close();
-		if (textArea != null)
+		if (dateFormat != null)
 			textArea.append("The server is stopped at " + dateFormat.format(new Date()) + ".\n");
 	}
 
 	public static void main(String args[]) {
 		new ServerSide();
+	}
+
+	class RunServer implements Runnable {
+		private Socket socket;
+
+		public RunServer(Socket socket) {
+			this.socket = socket;
+		}
+
+		@Override
+		public void run() {
+			try {
+				DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+				DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+				InetAddress inetAddress = socket.getInetAddress();
+				textArea.append(dateFormat.format(new Date()) + " Begin a connection from " +
+						inetAddress.getHostName() + " (" + inetAddress.getHostAddress() + ").\n");
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						running = false;
+					}
+				}, 60000);
+				running = true;
+				while (running) {
+					String inputMessage = dataInputStream.readUTF();
+					textArea.append(dateFormat.format(new Date()) + " Input Message: " + inputMessage + "\n");
+					String outputMessage = inputMessage.toUpperCase();
+					dataOutputStream.writeUTF(outputMessage);
+					textArea.append(dateFormat.format(new Date()) + " Output Message: " + outputMessage + "\n");
+				}
+				timer.cancel();
+				socket.close();
+				textArea.append(dateFormat.format(new Date()) + " Close the connection from " +
+						inetAddress.getHostName() + " (" + inetAddress.getHostAddress() + ").\n");
+			}
+			catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
 	}
 }
