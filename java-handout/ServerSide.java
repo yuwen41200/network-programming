@@ -23,8 +23,9 @@ import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 
 public class ServerSide {
-	private boolean running = false;
-	protected DateFormat dateFormat;
+	private boolean listening;
+	private boolean running;
+	protected DateFormat dateFormat = DateFormat.getDateTimeInstance();
 	protected JTextArea textArea;
 	protected ServerSocket serverSocket;
 
@@ -58,30 +59,52 @@ public class ServerSide {
 	}
 
 	public void start() throws IOException {
-		dateFormat = DateFormat.getDateTimeInstance();
 		serverSocket = new ServerSocket(5600);
+		listening = true;
+		ListenThread listenThread = new ListenThread(serverSocket);
+		listenThread.start();
 		textArea.append("The server is started at " + dateFormat.format(new Date()) + ".\n");
-		Socket socket = serverSocket.accept();
-		RunServer runServer = new RunServer(socket);
-		Thread thread = new Thread(runServer);
-		thread.start();
 	}
 
 	public void stop() throws IOException {
-		if (serverSocket != null)
+		if (serverSocket != null) {
+			listening = false;
 			serverSocket.close();
-		if (dateFormat != null)
+			serverSocket = null;
 			textArea.append("The server is stopped at " + dateFormat.format(new Date()) + ".\n");
+		}
 	}
 
 	public static void main(String args[]) {
 		new ServerSide();
 	}
 
-	class RunServer implements Runnable {
+	class ListenThread extends Thread {
+		private ServerSocket serverSocket;
+
+		public ListenThread(ServerSocket serverSocket) {
+			this.serverSocket = serverSocket;
+		}
+
+		@Override
+		public void run() {
+			while (listening) {
+				try {
+					Socket socket = serverSocket.accept();
+					RunThread runThread = new RunThread(socket);
+					runThread.start();
+				}
+				catch (IOException ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
+	}
+
+	class RunThread extends Thread {
 		private Socket socket;
 
-		public RunServer(Socket socket) {
+		public RunThread(Socket socket) {
 			this.socket = socket;
 		}
 
