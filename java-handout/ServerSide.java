@@ -24,7 +24,6 @@ import javax.swing.WindowConstants;
 
 public class ServerSide {
 	private boolean listening;
-	private boolean running;
 	protected DateFormat dateFormat = DateFormat.getDateTimeInstance();
 	protected JTextArea textArea;
 	protected ServerSocket serverSocket;
@@ -104,6 +103,7 @@ public class ServerSide {
 
 	class RunThread extends Thread {
 		private Socket socket;
+		private boolean running;
 
 		public RunThread(Socket socket) {
 			this.socket = socket;

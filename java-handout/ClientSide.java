@@ -63,6 +63,7 @@ public class ClientSide {
 	}
 
 	public void connect() {
+		short retryCount = 0;
 		do {
 			try {
 				Socket socket = new Socket("localhost", ServerSide.PORT);
@@ -72,14 +73,22 @@ public class ClientSide {
 			}
 			catch (IOException ex) {
 				ExceptionUtils.showStackTrace(ex);
-				textArea.append("Failed to start a connection at " + dateFormat.format(new Date()) +
-						", retry after 5 seconds...\n");
-			}
-			try {
-				Thread.sleep(5000);
-			}
-			catch (InterruptedException ex) {
-				ExceptionUtils.showStackTrace(ex);
+				if (retryCount < 3) {
+					textArea.append("Failed to start a connection at " + dateFormat.format(new Date()) +
+							", retry after 5 seconds...\n");
+					retryCount++;
+					try {
+						Thread.sleep(5000);
+					}
+					catch (InterruptedException exc) {
+						ExceptionUtils.showStackTrace(exc);
+					}
+				}
+				else {
+					textArea.append("Failed to start a connection at " + dateFormat.format(new Date()) +
+							", already retried 3 times.\n");
+					break;
+				}
 			}
 		} while (dataInputStream == null || dataOutputStream == null);
 	}
