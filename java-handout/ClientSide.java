@@ -23,9 +23,10 @@ import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
 public class ClientSide {
+	protected DataInputStream dataInputStream;
+	protected DataOutputStream dataOutputStream;
 	protected DateFormat dateFormat = DateFormat.getDateTimeInstance();
 	protected JTextArea textArea;
-	protected Socket socket;
 
 	public ClientSide() {
 		Font font = new Font(Font.MONOSPACED, Font.PLAIN, 16);
@@ -35,21 +36,22 @@ public class ClientSide {
 		textArea.setPreferredSize(new Dimension(600, 450));
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		JLabel label = new JLabel("Enter Message to Send: ");
-		JTextField textField = new JTextField();
+		final JTextField textField = new JTextField();
 		textField.setHorizontalAlignment(JTextField.RIGHT);
+		textField.setPreferredSize(new Dimension(480, 20));
 		textField.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					try { send(); }
-					catch (IOException ex) { ex.printStackTrace(); }
+					try { send(textField.getText().trim()); }
+					catch (IOException ex) { ExceptionUtils.showStackTrace(ex); }
 				}
 			}
 		});
 		JButton button = new JButton("Send");
 		button.addActionListener(e -> {
-			try { send(); }
-			catch (IOException ex) { ex.printStackTrace(); }
+			try { send(textField.getText().trim()); }
+			catch (IOException ex) { ExceptionUtils.showStackTrace(ex); }
 		});
 		JPanel sendPanel = new JPanel();
 		sendPanel.add(label, BorderLayout.WEST);
@@ -62,21 +64,35 @@ public class ClientSide {
 		topFrame.pack();
 		topFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		topFrame.setVisible(true);
+		do {
+			try {
+				init();
+			}
+			catch (IOException ex) {
+				ExceptionUtils.showStackTrace(ex);
+			}
+			try {
+				Thread.sleep(5000);
+			}
+			catch (InterruptedException ex) {
+				ExceptionUtils.showStackTrace(ex);
+			}
+		} while (dataInputStream == null || dataOutputStream == null);
 	}
 
 	public void init() throws IOException {
-		socket = new Socket("localhost", 5600);
-		DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-		DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-		textArea.append("The server is started at " + dateFormat.format(new Date()) + ".\n");
+		Socket socket = new Socket("localhost", 5600);
+		dataInputStream = new DataInputStream(socket.getInputStream());
+		dataOutputStream = new DataOutputStream(socket.getOutputStream());
+		textArea.append("Connected to server at " + dateFormat.format(new Date()) + ".\n");
 	}
 
-	public void send() throws IOException {
-		if (serverSocket != null) {
-			listening = false;
-			serverSocket.close();
-			serverSocket = null;
-			textArea.append("The server is stopped at " + dateFormat.format(new Date()) + ".\n");
+	public void send(String message) throws IOException {
+		if (dataInputStream != null && dataOutputStream != null) {
+			dataOutputStream.writeUTF(message);
+			dataOutputStream.flush();
+			textArea.append(dateFormat.format(new Date()) + " Result: " +
+					dataInputStream.readUTF() + "\n");
 		}
 	}
 

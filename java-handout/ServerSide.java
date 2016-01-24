@@ -39,12 +39,12 @@ public class ServerSide {
 		JButton startButton = new JButton("Start");
 		startButton.addActionListener(e -> {
 			try { start(); }
-			catch (IOException ex) { ex.printStackTrace(); }
+			catch (IOException ex) { ExceptionUtils.showStackTrace(ex); }
 		});
 		JButton stopButton = new JButton("Stop");
 		stopButton.addActionListener(e -> {
 			try { stop(); }
-			catch (IOException ex) { ex.printStackTrace(); }
+			catch (IOException ex) { ExceptionUtils.showStackTrace(ex); }
 		});
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.add(startButton, BorderLayout.WEST);
@@ -95,7 +95,7 @@ public class ServerSide {
 					runThread.start();
 				}
 				catch (IOException ex) {
-					ex.printStackTrace();
+					ExceptionUtils.showStackTrace(ex);
 				}
 			}
 		}
@@ -126,10 +126,12 @@ public class ServerSide {
 				running = true;
 				while (running) {
 					String inputMessage = dataInputStream.readUTF();
-					textArea.append(dateFormat.format(new Date()) + " Input Message: " + inputMessage + "\n");
+					textArea.append(dateFormat.format(new Date()) + " Input Message: " +
+							inputMessage + "\n");
 					String outputMessage = inputMessage.toUpperCase();
 					dataOutputStream.writeUTF(outputMessage);
-					textArea.append(dateFormat.format(new Date()) + " Output Message: " + outputMessage + "\n");
+					textArea.append(dateFormat.format(new Date()) + " Output Message: " +
+							outputMessage + "\n");
 				}
 				timer.cancel();
 				socket.close();
@@ -137,7 +139,7 @@ public class ServerSide {
 						inetAddress.getHostName() + " (" + inetAddress.getHostAddress() + ").\n");
 			}
 			catch (IOException ex) {
-				ex.printStackTrace();
+				ExceptionUtils.showStackTrace(ex);
 			}
 		}
 	}
