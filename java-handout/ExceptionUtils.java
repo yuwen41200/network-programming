@@ -2,9 +2,12 @@
  * Utilities for Throwable Objects
  */
 
-import javax.swing.JOptionPane;
+import java.awt.Dimension;
 import java.io.StringWriter;
 import java.io.PrintWriter;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 public class ExceptionUtils {
 	public static String getStackTrace(Throwable throwable) {
@@ -16,8 +19,11 @@ public class ExceptionUtils {
 
 	public static void showStackTrace(Throwable throwable) {
 		String message = ExceptionUtils.getStackTrace(throwable);
+		JTextArea textArea = new JTextArea(message);
+		JScrollPane scrollPane = new JScrollPane(textArea);
+		scrollPane.setPreferredSize(new Dimension(720, 450));
 		JOptionPane.showMessageDialog(null,
-				message,
+				scrollPane,
 				"Exception Thrown: " + throwable.getClass().getName(),
 				JOptionPane.ERROR_MESSAGE);
 	}

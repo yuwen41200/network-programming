@@ -34,8 +34,8 @@ public class ServerSide {
 		textArea = new JTextArea();
 		textArea.setEditable(false);
 		textArea.setFont(font);
-		textArea.setPreferredSize(new Dimension(600, 450));
 		JScrollPane scrollPane = new JScrollPane(textArea);
+		scrollPane.setPreferredSize(new Dimension(720, 450));
 		JButton startButton = new JButton("Start");
 		startButton.addActionListener(e -> {
 			try { start(); }

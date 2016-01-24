@@ -33,8 +33,8 @@ public class ClientSide {
 		textArea = new JTextArea();
 		textArea.setEditable(false);
 		textArea.setFont(font);
-		textArea.setPreferredSize(new Dimension(600, 450));
 		JScrollPane scrollPane = new JScrollPane(textArea);
+		scrollPane.setPreferredSize(new Dimension(720, 450));
 		JLabel label = new JLabel("Enter Message to Send: ");
 		final JTextField textField = new JTextField();
 		textField.setHorizontalAlignment(JTextField.RIGHT);
