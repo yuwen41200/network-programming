@@ -28,6 +28,7 @@ public class ServerSide {
 	protected DateFormat dateFormat = DateFormat.getDateTimeInstance();
 	protected JTextArea textArea;
 	protected ServerSocket serverSocket;
+	public static final int PORT = 5600;
 
 	public ServerSide() {
 		Font font = new Font(Font.MONOSPACED, Font.PLAIN, 16);
@@ -59,7 +60,7 @@ public class ServerSide {
 	}
 
 	public void start() throws IOException {
-		serverSocket = new ServerSocket(5600);
+		serverSocket = new ServerSocket(PORT);
 		listening = true;
 		ListenThread listenThread = new ListenThread(serverSocket);
 		listenThread.start();

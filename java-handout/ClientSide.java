@@ -38,21 +38,16 @@ public class ClientSide {
 		JLabel label = new JLabel("Enter Message to Send: ");
 		final JTextField textField = new JTextField();
 		textField.setHorizontalAlignment(JTextField.RIGHT);
-		textField.setPreferredSize(new Dimension(480, 20));
+		textField.setPreferredSize(new Dimension(450, 20));
 		textField.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					try { send(textField.getText().trim()); }
-					catch (IOException ex) { ExceptionUtils.showStackTrace(ex); }
-				}
+				if (e.getKeyCode() == KeyEvent.VK_ENTER)
+					send(textField.getText().trim());
 			}
 		});
 		JButton button = new JButton("Send");
-		button.addActionListener(e -> {
-			try { send(textField.getText().trim()); }
-			catch (IOException ex) { ExceptionUtils.showStackTrace(ex); }
-		});
+		button.addActionListener(e -> send(textField.getText().trim()));
 		JPanel sendPanel = new JPanel();
 		sendPanel.add(label, BorderLayout.WEST);
 		sendPanel.add(textField, BorderLayout.CENTER);
@@ -64,12 +59,21 @@ public class ClientSide {
 		topFrame.pack();
 		topFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		topFrame.setVisible(true);
+		connect();
+	}
+
+	public void connect() {
 		do {
 			try {
-				init();
+				Socket socket = new Socket("localhost", ServerSide.PORT);
+				dataInputStream = new DataInputStream(socket.getInputStream());
+				dataOutputStream = new DataOutputStream(socket.getOutputStream());
+				textArea.append("Connected to server at " + dateFormat.format(new Date()) + ".\n");
 			}
 			catch (IOException ex) {
 				ExceptionUtils.showStackTrace(ex);
+				textArea.append("Failed to start a connection at " + dateFormat.format(new Date()) +
+						", retry after 5 seconds...\n");
 			}
 			try {
 				Thread.sleep(5000);
@@ -80,19 +84,22 @@ public class ClientSide {
 		} while (dataInputStream == null || dataOutputStream == null);
 	}
 
-	public void init() throws IOException {
-		Socket socket = new Socket("localhost", 5600);
-		dataInputStream = new DataInputStream(socket.getInputStream());
-		dataOutputStream = new DataOutputStream(socket.getOutputStream());
-		textArea.append("Connected to server at " + dateFormat.format(new Date()) + ".\n");
-	}
-
-	public void send(String message) throws IOException {
+	public void send(String message) {
 		if (dataInputStream != null && dataOutputStream != null) {
-			dataOutputStream.writeUTF(message);
-			dataOutputStream.flush();
-			textArea.append(dateFormat.format(new Date()) + " Result: " +
-					dataInputStream.readUTF() + "\n");
+			try {
+				dataOutputStream.writeUTF(message);
+				dataOutputStream.flush();
+				textArea.append(dateFormat.format(new Date()) + " Result: " +
+						dataInputStream.readUTF() + "\n");
+			}
+			catch (IOException ex) {
+				ExceptionUtils.showStackTrace(ex);
+				dataInputStream = null;
+				dataOutputStream = null;
+				textArea.append("Connection lost at " + dateFormat.format(new Date()) +
+						", reconnecting...\n");
+				connect();
+			}
 		}
 	}
 
