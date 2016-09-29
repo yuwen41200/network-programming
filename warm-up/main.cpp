@@ -10,8 +10,10 @@ using namespace std;
 void run(string cmd, string data, string token);
 
 int main(int argc, char **argv) {
-	if (argc != 3)
+	if (argc != 3) {
 		cout << "usage: " << argv[0] << " [input file] [split token]" << endl;
+		exit(0);
+	}
 
 	ifstream input(argv[1]);
 
@@ -21,19 +23,19 @@ int main(int argc, char **argv) {
 	}
 
 	string cmd, data, token = argv[2];
-	char ws;
 
-	while (!input.eof()) {
-		input >> cmd >> ws;
+	while (input >> cmd) {
 		getline(input, data);
+		data.erase(0, 1);
 		run(cmd, data, token);
 	}
 
 	input.close();
 
 	while (true) {
-		cin >> cmd >> ws;
+		cin >> cmd;
 		getline(cin, data);
+		data.erase(0, 1);
 		run(cmd, data, token);
 	}
 }

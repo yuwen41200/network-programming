@@ -12,6 +12,9 @@
 # Virtual Machine Crash Logs
 hs_err_pid*
 
+# C/C++ Binaries
+*.out
+
 # IntelliJ IDEA Project Files
 .idea/
 *.iml
