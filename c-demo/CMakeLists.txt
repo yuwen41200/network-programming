@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.5)
+project(demo)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
+set(SOURCE_CLI cli.c)
+set(SOURCE_SRV srv.c)
+add_executable(cli ${SOURCE_CLI})
+add_executable(srv ${SOURCE_SRV})
