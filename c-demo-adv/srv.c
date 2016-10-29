@@ -1,11 +1,18 @@
+#include <sys/wait.h> /* struct sigaction, waitpid(), sigemptyset(), WNOHANG, SA_RESTART, SIGCHLD */
 #include <sys/socket.h> /* socklen_t, socket(), bind(), listen(), accept(), AF_INET, SOCK_STREAM */
 #include <netinet/in.h> /* struct sockaddr_in, htons(), htonl(), ntohs(), INADDR_ANY */
 #include <arpa/inet.h> /* inet_ntop() */
 #include <stdio.h> /* fprintf(), snprintf(), stderr, stdout, NULL */
 #include <stdlib.h> /* exit() */
 #include <string.h> /* bzero(), strlen() */
+#include <errno.h> /* errno, EINTR */
 #include <unistd.h> /* pid_t, fork(), write(), close() */
 #include <time.h> /* time_t, time(), ctime() */
+
+void handler(int signum) {
+	while (waitpid(-1, NULL, WNOHANG) > 0);
+	return;
+}
 
 int main(int argc, char **argv) {
 
@@ -31,6 +38,15 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	struct sigaction act;
+	act.sa_handler = handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_RESTART;
+	if (sigaction(SIGCHLD, &act, NULL) < 0) {
+		fprintf(stderr, "sigaction() error\n");
+		exit(1);
+	}
+
 	#pragma clang diagnostic push
 	#pragma clang diagnostic ignored "-Wmissing-noreturn"
 	while (1) {
@@ -39,6 +55,8 @@ int main(int argc, char **argv) {
 		struct sockaddr_in clieAddr;
 		socklen_t len = sizeof(clieAddr);
 		if ((connFD = accept(sockFD, (struct sockaddr *) &clieAddr, &len)) < 0) {
+			if (errno == EINTR)
+				continue;
 			fprintf(stderr, "accept() error\n");
 			exit(1);
 		}
