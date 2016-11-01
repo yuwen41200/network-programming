@@ -19,6 +19,8 @@ ssize_t	forceread(int fd, void *ptr, size_t size) {
 			break;
 		size_left -= size_read;
 		ptr = (char *) ptr + size_read;
+		if (*((char *) ptr - 1) == 0)
+			break;
 	}
 	return size - size_left;
 }

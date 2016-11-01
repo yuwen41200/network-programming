@@ -24,23 +24,20 @@ int main(int argc, char **argv) {
 		perror("connect() error");
 
 	char buf[2048];
-	ssize_t len;
-	if ((len = forceread(sockFd, buf, 2048)) < 0)
+	if (forceread(sockFd, buf, 2048) < 0)
 		perror("read() error");
-	buf[len] = 0;
 	fputs(buf, stdout);
 
 	while (1) {
 		fgets(buf, 2048, stdin);
-		if (forcewrite(sockFd, buf, strlen(buf)) < 0)
+		if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
 			perror("write() error");
 
-		if ((len = forceread(sockFd, buf, 2048)) < 0)
+		if (forceread(sockFd, buf, 2048) < 0)
 			perror("read() error");
-		buf[len] = 0;
 		fputs(buf, stdout);
 
-		if (strcmp(buf, "**bye**"))
+		if (!strcmp(buf, "**bye**\n"))
 			break;
 	}
 

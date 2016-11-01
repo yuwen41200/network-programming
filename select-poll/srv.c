@@ -65,7 +65,7 @@ int main() {
 			if (connFd > maxFd)
 				maxFd = connFd;
 
-			if (forcewrite(connFd, "**hello**", 9) < 0)
+			if (forcewrite(connFd, "**hello**\n", 11) < 0)
 				perror("write() error");
 
 			if (--readyNum <= 0)
@@ -79,29 +79,25 @@ int main() {
 
 			if (FD_ISSET(clieFd, &readFds)) {
 				char buf[2048];
-				ssize_t len = forceread(clieFd, buf, 2048);
+				ssize_t len;
+				if ((len = forceread(clieFd, buf, 2048)) < 0)
+					perror("read() error");
 
-				switch (len) {
-					case -1:
-						perror("read() error");
-						break;
+				if (!strcmp(buf, "\n")) {
+					if (forcewrite(clieFd, "**bye**\n", 9) < 0)
+						perror("write() error");
+					if (close(clieFd) < 0)
+						perror("close() error");
+					FD_CLR(clieFd, &allFds);
+					clients[i] = -1;
+				}
 
-					case 0:
-						if (forcewrite(clieFd, "**bye**", 7) < 0)
-							perror("write() error");
-						if (close(clieFd) < 0)
-							perror("close() error");
-						FD_CLR(clieFd, &allFds);
-						clients[i] = -1;
-						break;
-
-					default:
-						for (int j = 0; j < len; ++j)
-							if ('a' <= buf[j] && buf[j] <= 'z')
-								buf[j] -= 0x20;
-						if (forcewrite(clieFd, buf, (size_t) len) < 0)
-							perror("write() error");
-						break;
+				else {
+					for (int j = 0; j < len; ++j)
+						if ('a' <= buf[j] && buf[j] <= 'z')
+							buf[j] -= 0x20;
+					if (forcewrite(clieFd, buf, (size_t) len) < 0)
+						perror("write() error");
 				}
 
 				if (--readyNum <= 0)
