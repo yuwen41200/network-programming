@@ -24,21 +24,36 @@ int main(int argc, char **argv) {
 		perror("connect() error");
 
 	char buf[2048];
-	if (forceread(sockFd, buf, 2048) < 0)
+	ssize_t len;
+	if ((len = forceread(sockFd, buf, 2048)) < 0)
 		perror("read() error");
-	fputs(buf, stdout);
-
-	while (1) {
-		fgets(buf, 2048, stdin);
-		if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
-			perror("write() error");
-
-		if (forceread(sockFd, buf, 2048) < 0)
-			perror("read() error");
+	else if (len > 0)
 		fputs(buf, stdout);
 
-		if (!strcmp(buf, "**bye**\n"))
-			break;
+	while (1) {
+		fd_set readFds;
+		FD_ZERO(&readFds);
+		FD_SET(STDIN_FILENO, &readFds);
+		FD_SET(sockFd, &readFds);
+
+		if (select(sockFd + 1, &readFds, NULL, NULL, NULL) < 0)
+			perror("select() error");
+
+		if (FD_ISSET(STDIN_FILENO, &readFds)) {
+			fgets(buf, 2048, stdin);
+			if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
+				perror("write() error");
+		}
+
+		if (FD_ISSET(sockFd, &readFds)) {
+			if ((len = forceread(sockFd, buf, 2048)) < 0)
+				perror("read() error");
+			else if (len > 0)
+				fputs(buf, stdout);
+
+			if (!strcmp(buf, "**bye**\n"))
+				break;
+		}
 	}
 
 	if (close(sockFd) < 0)
