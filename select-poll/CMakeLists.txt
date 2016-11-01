@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(c_demo_adv)
+project(select-poll)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
 set(SRC_CLI cli.c)
 set(SRC_SRV srv.c)
