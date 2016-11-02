@@ -32,10 +32,12 @@ int main(int argc, char **argv) {
 	else if (len > 0)
 		fputs(buf, stdout);
 
+	bool stdinEof = false;
 	while (1) {
 		fd_set readFds;
 		FD_ZERO(&readFds);
-		FD_SET(STDIN_FILENO, &readFds);
+		if (!stdinEof)
+			FD_SET(STDIN_FILENO, &readFds);
 		FD_SET(sockFd, &readFds);
 
 		if (select(sockFd + 1, &readFds, NULL, NULL, NULL) < 0)
@@ -43,15 +45,20 @@ int main(int argc, char **argv) {
 
 		if (FD_ISSET(STDIN_FILENO, &readFds)) {
 			fgets(buf, 2048, stdin);
-			if (!strcmp(buf, "exit\n"))
-				break;
-			if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
+			if (!strcmp(buf, "exit\n")) {
+				if (shutdown(sockFd, SHUT_WR) < 0)
+					perror("shutdown() error");
+				stdinEof = true;
+			}
+			else if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
 				perror("write() error");
 		}
 
 		if (FD_ISSET(sockFd, &readFds)) {
 			if ((len = forceread(sockFd, buf, 2048)) < 0)
 				perror("read() error");
+			else if (len == 0 && stdinEof)
+				break;
 			else if (len > 0)
 				fputs(buf, stdout);
 		}
