@@ -23,8 +23,10 @@ int main(int argc, char **argv) {
 	if (inet_pton(AF_INET, argv[1], &servAddr.sin_addr) <= 0)
 		perror("inet_pton() error");
 
-	if (connect(sockFd, (const struct sockaddr *) &servAddr, sizeof(servAddr)) < 0)
+	if (connect(sockFd, (const struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
 		perror("connect() error");
+		return 1;
+	}
 
 	char buf[2048];
 	ssize_t len;
@@ -58,9 +60,12 @@ int main(int argc, char **argv) {
 		if (FD_ISSET(sockFd, &readFds)) {
 			if ((len = forceread(sockFd, buf, 2048)) < 0)
 				perror("read() error");
-			else if (len == 0 && stdinEof)
+			else if (len == 0) {
+				if (!stdinEof)
+					fprintf(stderr, "server disconnected\n");
 				break;
-			else if (len > 0)
+			}
+			else
 				fputs(buf, stdout);
 		}
 	}

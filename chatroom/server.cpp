@@ -19,8 +19,10 @@ int main() {
 	servAddr.sin_port = htons(57345);
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if (bind(sockFd, (const struct sockaddr *) &servAddr, sizeof(servAddr)) < 0)
+	if (bind(sockFd, (const struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
 		perror("bind() error");
+		return 1;
+	}
 
 	if (listen(sockFd, 16) < 0)
 		perror("listen() error");
