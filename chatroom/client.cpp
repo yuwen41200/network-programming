@@ -3,6 +3,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../include/netutils.h"
 
 int main(int argc, char **argv) {
@@ -18,7 +19,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in servAddr;
 	bzero(&servAddr, sizeof(servAddr));
 	servAddr.sin_family = AF_INET;
-	servAddr.sin_port = htons(57345);
+	servAddr.sin_port = htons((uint16_t) strtoul(argv[2], NULL, 0));
 	if (inet_pton(AF_INET, argv[1], &servAddr.sin_addr) <= 0)
 		perror("inet_pton() error");
 

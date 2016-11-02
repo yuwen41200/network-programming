@@ -4,6 +4,8 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
+#include <map>
+#include <random>
 #include "../include/netutils.h"
 
 int main() {
@@ -23,15 +25,16 @@ int main() {
 	if (listen(sockFd, 16) < 0)
 		perror("listen() error");
 
-	int maxFd = sockFd, maxClient = -1;
-	int clients[FD_SETSIZE];
-	for (int i = 0; i < FD_SETSIZE; ++i)
-		clients[i] = -1;
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dis(0, std::numeric_limits<int>::max());
+	std::map<std::string, int> clients;
 
 	char buf[2048];
 	fd_set allFds;
 	FD_ZERO(&allFds);
 	FD_SET(sockFd, &allFds);
+	int maxFd = sockFd;
 
 	#pragma clang diagnostic push
 	#pragma clang diagnostic ignored "-Wmissing-noreturn"
@@ -48,41 +51,47 @@ int main() {
 			if ((connFd = accept(sockFd, (struct sockaddr *) &clieAddr, &clieLen)) < 0)
 				perror("accept() error");
 
-			int i;
-			for (i = 0; i < FD_SETSIZE; ++i) {
-				if (clients[i] < 0) {
-					clients[i] = connFd;
+			if (clients.size() == FD_SETSIZE) {
+				fprintf(stderr, "maximum number of clients reached\n");
+				continue;
+			}
+
+			while (1) {
+				int rdNum = dis(gen);
+				std::string key = "_anonymous_" + std::to_string(rdNum);
+				auto search = clients.find(key);
+				if (search == clients.end()) {
+					clients[key] = connFd;
 					break;
 				}
 			}
-
-			if (i == FD_SETSIZE)
-				fprintf(stderr, "maximum number of clients reached\n");
-			if (i > maxClient)
-				maxClient = i;
 
 			FD_SET(connFd, &allFds);
 			if (connFd > maxFd)
 				maxFd = connFd;
 
-			char strIp[128];
-			inet_ntop(AF_INET, &clieAddr.sin_addr, strIp, sizeof(strIp));
-			sprintf(buf, "[Server] Hello, anonymous! From: %s/%d\n", strIp, ntohs(clieAddr.sin_port));
-
+			char ip[128];
+			inet_ntop(AF_INET, &clieAddr.sin_addr, ip, sizeof(ip));
+			int port = ntohs(clieAddr.sin_port);
+			sprintf(buf, "[Server] Hello, anonymous! From: %s/%d\n", ip, port);
 			if (forcewrite(connFd, buf, strlen(buf) + 1) < 0)
 				perror("write() error");
+
+			strcpy(buf, "[Server] Someone is coming!\n");
+			for (auto it = clients.begin(); it != clients.end(); ++it)
+				if (it->second != connFd)
+					if (forcewrite(it->second, buf, strlen(buf) + 1) < 0)
+						perror("write() error");
 
 			if (--readyNum <= 0)
 				continue;
 		}
 
-		for (int i = 0; i <= maxClient; i++) {
-			int clieFd = clients[i];
-			if (clieFd < 0)
-				continue;
+		for (auto it = clients.begin(); it != clients.end(); ) {
+			int clieFd = it->second;
+			ssize_t len = -1;
 
 			if (FD_ISSET(clieFd, &readFds)) {
-				ssize_t len;
 				if ((len = forceread(clieFd, buf, 2048)) < 0)
 					perror("read() error");
 
@@ -90,16 +99,7 @@ int main() {
 					if (close(clieFd) < 0)
 						perror("close() error");
 					FD_CLR(clieFd, &allFds);
-					clients[i] = -1;
-				}
-
-				else if (!strcmp(buf, "\n")) {
-					if (forcewrite(clieFd, "**bye**\n", 9) < 0)
-						perror("write() error");
-					if (close(clieFd) < 0)
-						perror("close() error");
-					FD_CLR(clieFd, &allFds);
-					clients[i] = -1;
+					it = clients.erase(it);
 				}
 
 				else {
@@ -113,6 +113,9 @@ int main() {
 				if (--readyNum <= 0)
 					break;
 			}
+
+			if (len != 0)
+				++it;
 		}
 	}
 	#pragma clang diagnostic pop
