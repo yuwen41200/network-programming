@@ -98,6 +98,18 @@ int main() {
 					perror("read() error");
 
 				else if (len == 0) {
+					const char *usr;
+					if (!it->first.compare(0, 11, "_anonymous_"))
+						usr = "anonymous";
+					else
+						usr = it->first.c_str();
+
+					sprintf(buf, "[Server] %s is offline.\n", usr);
+					for (auto i = clients.begin(); i != clients.end(); ++i)
+						if (i->second != clieFd)
+							if (forcewrite(i->second, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+
 					if (close(clieFd) < 0)
 						perror("close() error");
 					FD_CLR(clieFd, &allFds);

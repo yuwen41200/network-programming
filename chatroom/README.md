@@ -1,4 +1,4 @@
-- [ ] Hello Message
+- [x] Hello Message
 
       Send Format:
       > To the new connected client  
@@ -6,13 +6,13 @@
       > To existing clients  
       > `[Server] Someone is coming!`
 
-- [ ] Offline Message
+- [x] Offline Message
 
       Send Format:
       > To all the other clients  
       > `[Server] <USERNAME> is offline.`
 
-- [ ] Who Message
+- [x] Who Message
 
       Recv Format:
       > `who`
@@ -63,7 +63,7 @@
       Send Format:
       > `[Server] <SENDER USERNAME> yell <MESSAGE>`
 
-- [ ] Error Command
+- [x] Error Command
 
       Send Format:
       > `[Server] ERROR: Error command.`
