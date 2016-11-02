@@ -83,7 +83,14 @@ int main() {
 				if ((len = forceread(clieFd, buf, 2048)) < 0)
 					perror("read() error");
 
-				if (!strcmp(buf, "\n")) {
+				else if (len == 0) {
+					if (close(clieFd) < 0)
+						perror("close() error");
+					FD_CLR(clieFd, &allFds);
+					clients[i] = -1;
+				}
+
+				else if (!strcmp(buf, "\n")) {
 					if (forcewrite(clieFd, "**bye**\n", 9) < 0)
 						perror("write() error");
 					if (close(clieFd) < 0)
