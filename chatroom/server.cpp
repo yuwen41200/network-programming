@@ -123,6 +123,8 @@ int main() {
 					std::string token;
 					while (tokenizer >> token)
 						tokens.push_back(token);
+					if (tokens.empty())
+						tokens.push_back("null");
 
 					if (tokens.front() == "who" && tokens.size() == 1) {
 						for (auto i = clients.begin(); i != clients.end(); ++i) {
@@ -205,6 +207,43 @@ int main() {
 							strcpy(buf, "[Server] ERROR: Username can only consists of 2~12 English letters.\n");
 							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
 								perror("write() error");
+						}
+					}
+
+					else if (tokens.front() == "tell" && tokens.size() >= 3) {
+						if (!it->first.compare(0, 11, "_anonymous_")) {
+							strcpy(buf, "[Server] ERROR: You are anonymous.\n");
+							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+						}
+
+						else if (tokens[1] == "anonymous") {
+							strcpy(buf, "[Server] ERROR: The client to which you sent is anonymous.\n");
+							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+						}
+
+						else if (clients.find(tokens[1]) == clients.end()) {
+							strcpy(buf, "[Server] ERROR: The receiver doesn't exist.\n");
+							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+						}
+
+						else {
+							tokenizer.str(buf);
+							tokenizer.clear();
+							tokenizer >> token;
+							tokenizer >> token;
+							std::getline(tokenizer, token);
+
+							sprintf(buf, "[Server] %s tell you %s\n", it->first.c_str(), token.c_str());
+							if (forcewrite(clients[tokens[1]], buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+							else {
+								strcpy(buf, "[Server] SUCCESS: Your message has been sent.\n");
+								if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+									perror("write() error");
+							}
 						}
 					}
 
