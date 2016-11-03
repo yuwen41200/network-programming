@@ -161,19 +161,33 @@ int main() {
 						}
 
 						else if (clients.find(tokens[1]) != clients.end()) {
-							sprintf(buf, "[Server] ERROR: %s has been used by others.\n", tokens[1]);
+							sprintf(buf, "[Server] ERROR: %s has been used by others.\n", tokens[1].c_str());
 							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
 								perror("write() error");
 						}
 
 						else if (2 <= tokens[1].size() && tokens[1].size() <= 12) {
 							bool alpha = true;
-							for (int i = 0; i < tokens[1].size(); ++i)
+							for (size_t i = 0; i < tokens[1].size(); ++i)
 								if (!isalpha(tokens[1][i]))
 									alpha = false;
 
 							if (alpha) {
-								// TODO
+								const char *usr;
+								if (!it->first.compare(0, 11, "_anonymous_"))
+									usr = "anonymous";
+								else
+									usr = it->first.c_str();
+
+								for (auto i = clients.begin(); i != clients.end(); ++i) {
+									if (i->second == clieFd)
+										sprintf(buf, "[Server] You're now known as %s.\n", tokens[1].c_str());
+									else
+										sprintf(buf, "[Server] %s is now known as %s.\n", usr, tokens[1].c_str());
+
+									if (forcewrite(i->second, buf, strlen(buf) + 1) < 0)
+										perror("write() error");
+								}
 
 								len = 0;
 								it = clients.erase(it);
