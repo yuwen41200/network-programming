@@ -6,6 +6,7 @@
 #include <string.h>
 #include <map>
 #include <random>
+#include <sstream>
 #include "../include/netutils.h"
 
 int main() {
@@ -116,40 +117,40 @@ int main() {
 					it = clients.erase(it);
 				}
 
-				else if (!strcmp(buf, "who\n")) {
-					for (auto i = clients.begin(); i != clients.end(); ++i) {
-						struct sockaddr_in clieAddr;
-						socklen_t clieLen = sizeof(clieAddr);
-						if (getpeername(i->second, (struct sockaddr *) &clieAddr, &clieLen) < 0)
-							perror("getpeername() error");
+					else if (!strcmp(buf, "who\n")) {
+						for (auto i = clients.begin(); i != clients.end(); ++i) {
+							struct sockaddr_in clieAddr;
+							socklen_t clieLen = sizeof(clieAddr);
+							if (getpeername(i->second, (struct sockaddr *) &clieAddr, &clieLen) < 0)
+								perror("getpeername() error");
 
-						const char *usr;
-						if (!i->first.compare(0, 11, "_anonymous_"))
-							usr = "anonymous";
-						else
-							usr = i->first.c_str();
+							const char *usr;
+							if (!i->first.compare(0, 11, "_anonymous_"))
+								usr = "anonymous";
+							else
+								usr = i->first.c_str();
 
-						char ip[128];
-						inet_ntop(AF_INET, &clieAddr.sin_addr, ip, sizeof(ip));
-						int port = ntohs(clieAddr.sin_port);
-						if (i->first == it->first)
-							sprintf(buf, "[Server] %s %s/%d ->me\n", usr, ip, port);
-						else
-							sprintf(buf, "[Server] %s %s/%d\n", usr, ip, port);
+							char ip[128];
+							inet_ntop(AF_INET, &clieAddr.sin_addr, ip, sizeof(ip));
+							int port = ntohs(clieAddr.sin_port);
+							if (i->first == it->first)
+								sprintf(buf, "[Server] %s %s/%d ->me\n", usr, ip, port);
+							else
+								sprintf(buf, "[Server] %s %s/%d\n", usr, ip, port);
 
-						if (forcewrite(clieFd, buf, strlen(buf)) < 0)
+							if (forcewrite(clieFd, buf, strlen(buf)) < 0)
+								perror("write() error");
+						}
+
+						if (forcewrite(clieFd, "", 1) < 0)
 							perror("write() error");
 					}
 
-					if (forcewrite(clieFd, "", 1) < 0)
-						perror("write() error");
-				}
-
-				else {
-					strcpy(buf, "[Server] ERROR: Error command.\n");
-					if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
-						perror("write() error");
-				}
+					else {
+						strcpy(buf, "[Server] ERROR: Error command.\n");
+						if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+							perror("write() error");
+					}
 
 				if (--readyNum <= 0)
 					break;
