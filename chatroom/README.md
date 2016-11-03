@@ -21,7 +21,7 @@
       > `[Server] <USERNAME> <CLIENT IP>/<CLIENT PORT>`  
       > `[Server] <SENDER USERNAME> <CLIENT IP>/<CLIENT PORT> ->me`
 
-- [ ] Change Username Message
+- [x] Change Username Message
 
       Recv Format:
       > `name <NEW USERNAME>`
@@ -38,7 +38,7 @@
       > To other users  
       > `[Server] <OLD USERNAME> is now known as <NEW USERNAME>.`
 
-- [ ] Private Message
+- [x] Private Message
 
       Recv Format:
       > `tell <USERNAME> <MESSAGE>`
