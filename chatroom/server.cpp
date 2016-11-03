@@ -8,6 +8,7 @@
 #include <random>
 #include <sstream>
 #include "../include/netutils.h"
+#include "../include/strutils.h"
 
 int main() {
 	int sockFd;
@@ -235,6 +236,7 @@ int main() {
 							tokenizer >> token;
 							tokenizer >> token;
 							std::getline(tokenizer, token);
+							trim(token);
 
 							sprintf(buf, "[Server] %s tell you %s\n", it->first.c_str(), token.c_str());
 							if (forcewrite(clients[tokens[1]], buf, strlen(buf) + 1) < 0)

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../include/netutils.h"
+#include "../include/strutils.h"
 
 int main(int argc, char **argv) {
 	if (argc != 3) {
@@ -48,12 +49,14 @@ int main(int argc, char **argv) {
 
 		if (FD_ISSET(STDIN_FILENO, &readFds)) {
 			fgets(buf, 2048, stdin);
-			if (!strcmp(buf, "exit\n")) {
+			std::string trimmed(buf);
+			trim(trimmed);
+			if (trimmed == "exit") {
 				if (shutdown(sockFd, SHUT_WR) < 0)
 					perror("shutdown() error");
 				stdinEof = true;
 			}
-			else if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
+			else if (trimmed.size() > 0 && forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
 				perror("write() error");
 		}
 
