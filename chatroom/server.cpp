@@ -117,7 +117,14 @@ int main() {
 					it = clients.erase(it);
 				}
 
-					else if (!strcmp(buf, "who\n")) {
+				else {
+					std::istringstream tokenizer(buf);
+					std::vector<std::string> tokens;
+					std::string token;
+					while (tokenizer >> token)
+						tokens.push_back(token);
+
+					if (tokens.front() == "who" && tokens.size() == 1) {
 						for (auto i = clients.begin(); i != clients.end(); ++i) {
 							struct sockaddr_in clieAddr;
 							socklen_t clieLen = sizeof(clieAddr);
@@ -146,11 +153,53 @@ int main() {
 							perror("write() error");
 					}
 
+					else if (tokens.front() == "name" && tokens.size() == 2) {
+						if (tokens[1] == "anonymous") {
+							strcpy(buf, "[Server] ERROR: Username cannot be anonymous.\n");
+							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+						}
+
+						else if (clients.find(tokens[1]) != clients.end()) {
+							sprintf(buf, "[Server] ERROR: %s has been used by others.\n", tokens[1]);
+							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+						}
+
+						else if (2 <= tokens[1].size() && tokens[1].size() <= 12) {
+							bool alpha = true;
+							for (int i = 0; i < tokens[1].size(); ++i)
+								if (!isalpha(tokens[1][i]))
+									alpha = false;
+
+							if (alpha) {
+								// TODO
+
+								len = 0;
+								it = clients.erase(it);
+								clients[tokens[1]] = clieFd;
+							}
+
+							else {
+								strcpy(buf, "[Server] ERROR: Username can only consists of 2~12 English letters.\n");
+								if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+									perror("write() error");
+							}
+						}
+
+						else {
+							strcpy(buf, "[Server] ERROR: Username can only consists of 2~12 English letters.\n");
+							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+						}
+					}
+
 					else {
 						strcpy(buf, "[Server] ERROR: Error command.\n");
 						if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
 							perror("write() error");
 					}
+				}
 
 				if (--readyNum <= 0)
 					break;
