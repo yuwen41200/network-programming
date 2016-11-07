@@ -55,7 +55,7 @@
       > To receiver, if both client's name are not anonymous  
       > `[Server] <SENDER USERNAME> tell you <MESSAGE>`
 
-- [ ] Broadcast Message
+- [x] Broadcast Message
 
       Recv Format:
       > `yell <MESSAGE>`

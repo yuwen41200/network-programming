@@ -253,6 +253,25 @@ int main() {
 						}
 					}
 
+					else if (tokens.front() == "yell" && tokens.size() >= 2) {
+						tokenizer.str(buf);
+						tokenizer.clear();
+						tokenizer >> token;
+						std::getline(tokenizer, token);
+						trim(token);
+
+						const char *usr;
+						if (!it->first.compare(0, 11, "_anonymous_"))
+							usr = "anonymous";
+						else
+							usr = it->first.c_str();
+
+						sprintf(buf, "[Server] %s yell %s\n", usr, token.c_str());
+						for (auto i = clients.begin(); i != clients.end(); ++i)
+							if (forcewrite(i->second, buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+					}
+
 					else {
 						strcpy(buf, "[Server] ERROR: Error command.\n");
 						if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
