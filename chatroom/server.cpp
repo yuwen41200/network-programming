@@ -163,7 +163,7 @@ int main() {
 								perror("write() error");
 						}
 
-						else if (clients.find(tokens[1]) != clients.end()) {
+						else if (clients.find(tokens[1]) != clients.end() && clients.find(tokens[1])->first != it->first) {
 							sprintf(buf, "[Server] ERROR: %s has been used by others.\n", tokens[1].c_str());
 							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
 								perror("write() error");
@@ -192,9 +192,11 @@ int main() {
 										perror("write() error");
 								}
 
-								len = 0;
-								it = clients.erase(it);
-								clients[tokens[1]] = clieFd;
+								if (clients.find(tokens[1])->first != it->first) {
+									len = 0;
+									it = clients.erase(it);
+									clients[tokens[1]] = clieFd;
+								}
 							}
 
 							else {
@@ -239,7 +241,9 @@ int main() {
 							trim(token);
 
 							sprintf(buf, "[Server] %s tell you %s\n", it->first.c_str(), token.c_str());
-							if (forcewrite(clients[tokens[1]], buf, strlen(buf) + 1) < 0)
+							if (clients[tokens[1]] != clieFd && forcewrite(clients[tokens[1]], buf, strlen(buf) + 1) < 0)
+								perror("write() error");
+							else if (clients[tokens[1]] == clieFd && forcewrite(clients[tokens[1]], buf, strlen(buf)) < 0)
 								perror("write() error");
 							else {
 								strcpy(buf, "[Server] SUCCESS: Your message has been sent.\n");
