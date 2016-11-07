@@ -175,6 +175,9 @@ int main() {
 								if (!isalpha(tokens[1][i]))
 									alpha = false;
 
+							if (isspace(buf[strlen(buf)-2]))
+								alpha = false;
+
 							if (alpha) {
 								const char *usr;
 								if (!it->first.compare(0, 11, "_anonymous_"))
@@ -211,6 +214,12 @@ int main() {
 							if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
 								perror("write() error");
 						}
+					}
+
+					else if (tokens.front() == "name" && tokens.size() != 2) {
+						strcpy(buf, "[Server] ERROR: Username can only consists of 2~12 English letters.\n");
+						if (forcewrite(clieFd, buf, strlen(buf) + 1) < 0)
+							perror("write() error");
 					}
 
 					else if (tokens.front() == "tell" && tokens.size() >= 3) {
@@ -271,6 +280,8 @@ int main() {
 							if (forcewrite(i->second, buf, strlen(buf) + 1) < 0)
 								perror("write() error");
 					}
+
+					else if (tokens.front() == "null" && tokens.size() == 1);
 
 					else {
 						strcpy(buf, "[Server] ERROR: Error command.\n");

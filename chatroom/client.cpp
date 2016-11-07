@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 					perror("shutdown() error");
 				stdinEof = true;
 			}
-			else if (trimmed.size() > 0 && forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
+			else if (forcewrite(sockFd, buf, strlen(buf) + 1) < 0)
 				perror("write() error");
 		}
 
