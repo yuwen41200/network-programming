@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <netdb.h>
 #include "../include/netutils.h"
 #include "../include/strutils.h"
 
@@ -21,8 +22,14 @@ int main(int argc, char **argv) {
 	bzero(&servAddr, sizeof(servAddr));
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_port = htons((uint16_t) strtoul(argv[2], NULL, 0));
-	if (inet_pton(AF_INET, argv[1], &servAddr.sin_addr) <= 0)
-		perror("inet_pton() error");
+	if (inet_pton(AF_INET, argv[1], &servAddr.sin_addr) <= 0) {
+		struct hostent *host;
+		if ((host = gethostbyname(argv[1])) != NULL) {
+			struct in_addr **addrs = (struct in_addr **) host->h_addr_list;
+			if (addrs[0] != NULL)
+				servAddr.sin_addr = *addrs[0];
+		}
+	}
 
 	if (connect(sockFd, (const struct sockaddr *) &servAddr, sizeof(servAddr)) < 0) {
 		perror("connect() error");
