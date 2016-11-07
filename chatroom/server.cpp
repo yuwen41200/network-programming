@@ -124,10 +124,10 @@ int main() {
 					std::string token;
 					while (tokenizer >> token)
 						tokens.push_back(token);
-					if (tokens.empty())
-						tokens.push_back("null");
 
-					if (tokens.front() == "who" && tokens.size() == 1) {
+					if (tokens.empty());
+
+					else if (tokens.front() == "who" && tokens.size() == 1) {
 						for (auto i = clients.begin(); i != clients.end(); ++i) {
 							struct sockaddr_in clieAddr;
 							socklen_t clieLen = sizeof(clieAddr);
@@ -280,8 +280,6 @@ int main() {
 							if (forcewrite(i->second, buf, strlen(buf) + 1) < 0)
 								perror("write() error");
 					}
-
-					else if (tokens.front() == "null" && tokens.size() == 1);
 
 					else {
 						strcpy(buf, "[Server] ERROR: Error command.\n");
