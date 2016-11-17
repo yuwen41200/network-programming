@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	}
 
 	char buf[2048], clientId[6];
-	if (forceread(sockFd, buf, 2048) <= 0 || memcmp(buf, "IG", 2)) { // CLIENT ID GET operation
+	if (forceread(sockFd, buf, 2048, false) <= 0 || memcmp(buf, "IG", 2)) { // CLIENT ID GET operation
 		fprintf(stderr, "cannot initialize connection\n");
 		return 1;
 	}
@@ -50,6 +50,10 @@ int main(int argc, char **argv) {
 	clientId[5] = 0;
 
 	bool stdinEof = false;
+	char tempBuf[128];
+	std::ofstream *pFile = NULL;
+	long decoded;
+
 	while (1) {
 		fd_set readFds;
 		FD_ZERO(&readFds);
@@ -78,14 +82,13 @@ int main(int argc, char **argv) {
 			}
 
 			else if (tokens.front() == "PUT" && tokens.size() == 3) {
-				std::ifstream file(tokens[1], std::ios::in);
+				std::ifstream file(tokens[1], std::ios::in | std::ios::binary);
 				struct stat statBuf;
 				if (!file.is_open())
 					fprintf(stderr, "cannot read %s\n", tokens[1].c_str());
 				if (stat(tokens[1].c_str(), &statBuf) < 0)
 					perror("stat() error");
 
-				char tempBuf[128];
 				strcpy(buf, "PI"); // PUT FILE INITIALIZE operation
 				sprintf(tempBuf, "%05d", (int) tokens[2].size() + 5);
 				strcat(buf, tempBuf); // length of file name, 5 bytes
@@ -108,10 +111,38 @@ int main(int argc, char **argv) {
 				}
 
 				strcpy(buf, "PF"); // PUT FILE FINALIZE operation
+				sprintf(tempBuf, "PUT %s %s succeeded\n", tokens[1], tokens[2]);
+				strcat(buf, tempBuf); // success message
+
 				if (forcewrite(sockFd, buf, 2048) < 0)
 					perror("write() error");
 
 				file.close();
+			}
+
+			else if (tokens.front() == "GET" && tokens.size() == 3) {
+				pFile = new std::ofstream(tokens[2], std::ios::out | std::ios::trunc | std::ios::binary);
+				if (!pFile->is_open())
+					fprintf(stderr, "cannot write %s\n", tokens[2].c_str());
+
+				strcpy(buf, "GI"); // GET FILE INITIALIZE operation
+				sprintf(tempBuf, "%05d", (int) tokens[1].size() + 5);
+				strcat(buf, tempBuf); // length of file name, 5 bytes
+				strcat(buf, clientId); // client id as prefix of file name
+				strcat(buf, tokens[1].c_str()); // original file name
+				sprintf(tempBuf, "GET %s %s succeeded\n", tokens[1], tokens[2]);
+				strcat(buf, tempBuf); // success message
+
+				if (forcewrite(sockFd, buf, 2048) < 0)
+					perror("write() error");
+			}
+
+			else if (tokens.front() == "LIST" && tokens.size() == 1) {
+				strcpy(buf, "LR"); // LIST FILES REQUEST operation
+				strcat(buf, clientId); // client id as prefix of file name
+
+				if (forcewrite(sockFd, buf, 2048) < 0)
+					perror("write() error");
 			}
 
 			else
@@ -120,15 +151,46 @@ int main(int argc, char **argv) {
 
 		if (FD_ISSET(sockFd, &readFds)) {
 			ssize_t len;
-			if ((len = forceread(sockFd, buf, 2048)) < 0)
+			if ((len = forceread(sockFd, buf, 2048, false)) < 0)
 				perror("read() error");
+
 			else if (len == 0) {
 				if (!stdinEof)
 					fprintf(stderr, "server disconnected\n");
 				break;
 			}
+
+			else if (!memcmp(buf, "PE", 2)) // PUT FILE ERROR operation
+				fprintf(stderr, "failed to send the designated file\n");
+
+			else if (!memcmp(buf, "GE", 2)) { // GET FILE ERROR operation
+				fprintf(stderr, "failed to receive the designated file\n");
+				pFile->close();
+			}
+
+			else if (!memcmp(buf, "GD", 2)) { // GET FILE DATA operation
+				memcpy(tempBuf, buf + 2, 5); // length of data, 5 bytes
+				tempBuf[5] = 0;
+				decoded = strtol(tempBuf, NULL, 10);
+				pFile->write(buf + 7, decoded); // data to receive
+			}
+
+			else if (!memcmp(buf, "GF", 2)) { // GET FILE FINALIZE operation
+				memcpy(tempBuf, buf + 2, 10); // length of file, 10 bytes
+				tempBuf[10] = 0;
+				decoded = strtol(tempBuf, NULL, 10);
+				if (pFile->tellp() == decoded)
+					fputs(buf + 12, stdout); // success message
+				else
+					fprintf(stderr, "server's file and client's file are different\n");
+				pFile->close();
+			}
+
+			else if (!memcmp(buf, "MP", 2)) // MESSAGE PRINT operation
+				fputs(buf + 2, stdout); // message to print
+
 			else
-				fputs(buf, stdout);
+				fprintf(stderr, "invalid response\n");
 		}
 	}
 
