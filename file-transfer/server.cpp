@@ -49,7 +49,7 @@ int main() {
 
 	char buf[2048], tempBuf[128];
 	std::ofstream *pFile = NULL;
-	long decoded, fileSize;
+	long decoded, fileSize = -1;
 
 	while (1) {
 		int readyNum;
@@ -165,8 +165,55 @@ int main() {
 							perror("write() error");
 				}
 
-				else
-					fprintf(stderr, "invalid request\n");
+				else if (!memcmp(buf, "PD", 2) && pFile->is_open()) { // PUT FILE DATA operation
+					memcpy(tempBuf, buf + 2, 5); // length of data, 5 bytes
+					tempBuf[5] = 0;
+					decoded = strtol(tempBuf, NULL, 10);
+					pFile->write(buf + 7, decoded); // data to send
+				}
+
+				else if (!memcmp(buf, "PF", 2) && pFile->is_open()) { // PUT FILE FINALIZE operation
+					if (pFile->tellp() == fileSize) {
+						memcpy(buf, "MP", 2); // MESSAGE PRINT STDOUT operation
+						if (forcewrite(clieFd, buf, 2048) < 0)
+							perror("write() error");
+					}
+					else {
+						strcpy(buf, "ME"); // MESSAGE PRINT STDERR operation
+						strcat(buf, "server's file and client's file are different\n"); // message to print
+						if (forcewrite(clieFd, buf, 2048) < 0)
+							perror("write() error");
+					}
+					pFile->close();
+				}
+
+				else if (!memcmp(buf, "LR", 2)) { // LIST FILES REQUEST operation
+					strcpy(buf, "MP"); // MESSAGE PRINT STDOUT operation
+					// TODO: list all files belongs to that client id
+					if (forcewrite(clieFd, buf, 2048) < 0)
+						perror("write() error");
+				}
+
+				else if (!memcmp(buf, "IS", 2)) { // CLIENT ID SET operation
+					memcpy(tempBuf, buf + 2, 5); // client id, 5 bytes
+					tempBuf[5] = 0;
+
+					if (permanentIds.find(clientId) == permanentIds.end()) {
+						// TODO: delete all files belongs to that client id
+					}
+					permanentIds.insert(tempBuf);
+
+					len = 0;
+					it = clients.erase(it);
+					clients[tempBuf] = clieFd;
+				}
+
+				else {
+					strcpy(buf, "ME"); // MESSAGE PRINT STDERR operation
+					strcat(buf, "invalid request\n"); // message to print
+					if (forcewrite(clieFd, buf, 2048) < 0)
+						perror("write() error");
+				}
 
 				if (--readyNum <= 0)
 					break;

@@ -186,8 +186,11 @@ int main(int argc, char **argv) {
 				pFile->close();
 			}
 
-			else if (!memcmp(buf, "MP", 2)) // MESSAGE PRINT operation
+			else if (!memcmp(buf, "MP", 2)) // MESSAGE PRINT STDOUT operation
 				fputs(buf + 2, stdout); // message to print
+
+			else if (!memcmp(buf, "ME", 2)) // MESSAGE PRINT STDERR operation
+				fprintf(stderr, buf + 2); // message to print
 
 			else
 				fprintf(stderr, "invalid response\n");
