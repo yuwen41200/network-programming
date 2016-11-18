@@ -145,6 +145,16 @@ int main(int argc, char **argv) {
 					perror("write() error");
 			}
 
+			else if (tokens.front() == "CLIENTID:" && tokens.size() == 2 && tokens[1].size() == 5) {
+				strcpy(clientId, tokens[1].c_str());
+
+				strcpy(buf, "IS"); // CLIENT ID SET operation
+				strcat(buf, clientId); // client id, 5 bytes
+
+				if (forcewrite(sockFd, buf, 2048) < 0)
+					perror("write() error");
+			}
+
 			else
 				fprintf(stderr, "invalid command\n");
 		}

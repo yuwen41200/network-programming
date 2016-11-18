@@ -104,6 +104,7 @@ int main() {
 
 					if (permanentIds.find(clientId) == permanentIds.end()) {
 						// TODO: delete all files belongs to that client id
+						// http://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
 					}
 
 					if (close(clieFd) < 0)
