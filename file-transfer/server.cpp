@@ -8,6 +8,8 @@
 #include <random>
 #include <sstream>
 #include <set>
+#include <fstream>
+#include <sys/stat.h>
 #include "../include/netutils.h"
 #include "../include/strutils.h"
 
@@ -40,11 +42,14 @@ int main() {
 	std::map<std::string, int> clients;
 	std::set<std::string> permanentIds;
 
-	char buf[2048];
 	fd_set allFds;
 	FD_ZERO(&allFds);
 	FD_SET(sockFd, &allFds);
 	int maxFd = sockFd;
+
+	char buf[2048], tempBuf[128];
+	std::ofstream *pFile = NULL;
+	long decoded, fileSize;
 
 	while (1) {
 		int readyNum;
@@ -95,7 +100,7 @@ int main() {
 					perror("read() error");
 
 				else if (len == 0) {
-					fputs("Client has closed the connection\n", stdout);
+					fputs("client has closed the connection\n", stdout);
 
 					if (permanentIds.find(clientId) == permanentIds.end()) {
 						// TODO: delete all files belongs to that client id
@@ -108,45 +113,55 @@ int main() {
 				}
 
 				else if (!memcmp(buf, "GI", 2)) { // GET FILE INITIALIZE operation
-					for (auto i = clients.begin(); i != clients.end(); ++i) {
-						struct sockaddr_in clieAddr;
-						socklen_t clieLen = sizeof(clieAddr);
-						if (getpeername(i->second, (struct sockaddr *) &clieAddr, &clieLen) < 0)
-							perror("getpeername() error");
+					memcpy(tempBuf, buf + 2, 5); // length of file name, 5 bytes
+					tempBuf[5] = 0;
+					decoded = strtol(tempBuf, NULL, 10);
+					memcpy(tempBuf, buf + 7, (size_t) decoded); // file name
+					tempBuf[decoded] = 0;
+					std::string success(buf + 7 + decoded); // success message
 
-						const char *usr;
-						if (!i->first.compare(0, 11, "_anonymous_"))
-							usr = "anonymous";
-						else
-							usr = i->first.c_str();
+					std::ifstream file(tempBuf, std::ios::in | std::ios::binary);
+					struct stat statBuf;
+					strcpy(buf, "GE"); // GET FILE ERROR operation
+					if (!file.is_open() || stat(tempBuf, &statBuf) < 0)
+						if (forcewrite(clieFd, buf, 2048) < 0)
+							perror("write() error");
 
-						char ip[128];
-						inet_ntop(AF_INET, &clieAddr.sin_addr, ip, sizeof(ip));
-						int port = ntohs(clieAddr.sin_port);
-						if (i->first == it->first)
-							sprintf(buf, "[Server] %s %s/%d ->me\n", usr, ip, port);
-						else
-							sprintf(buf, "[Server] %s %s/%d\n", usr, ip, port);
+					while (file.good()) {
+						file.read(buf + 7, 1920); // data to receive
+						strcpy(buf, "GD"); // GET FILE DATA operation
+						sprintf(tempBuf, "%05d", (int) file.gcount());
+						memcpy(buf + 2, tempBuf, 5); // length of data, 5 bytes
 
-						if (forcewrite(clieFd, buf, strlen(buf)) < 0)
+						if (forcewrite(clieFd, buf, 2048) < 0)
 							perror("write() error");
 					}
 
-					if (forcewrite(clieFd, "", 1) < 0)
-						perror("write() error");
+					if (memcmp(buf, "GE", 2)) {
+						strcpy(buf, "GF"); // GET FILE FINALIZE operation
+						sprintf(tempBuf, "%010d", (int) statBuf.st_size);
+						strcat(buf, tempBuf); // length of file, 10 bytes
+						strcat(buf, success.c_str()); // success message
+
+						if (forcewrite(clieFd, buf, 2048) < 0)
+							perror("write() error");
+
+						file.close();
+					}
 				}
 
-				else if (!memcmp(buf, "TD", 2)) { // TODO...
-					const char *usr;
-					if (!it->first.compare(0, 11, "_anonymous_"))
-						usr = "anonymous";
-					else
-						usr = it->first.c_str();
+				else if (!memcmp(buf, "PI", 2)) { // PUT FILE INITIALIZE operation
+					memcpy(tempBuf, buf + 2, 5); // length of file name, 5 bytes
+					tempBuf[5] = 0;
+					decoded = strtol(tempBuf, NULL, 10);
+					memcpy(tempBuf, buf + 7, (size_t) decoded); // file name
+					tempBuf[decoded] = 0;
+					fileSize = strtol(buf + 7 + decoded, NULL, 10); // length of file, 10 bytes
 
-					std::string token;
-					sprintf(buf, "[Server] %s yell %s\n", usr, token.c_str());
-					for (auto i = clients.begin(); i != clients.end(); ++i)
-						if (forcewrite(i->second, buf, strlen(buf) + 1) < 0)
+					pFile = new std::ofstream(tempBuf, std::ios::out | std::ios::trunc | std::ios::binary);
+					strcpy(buf, "PE"); // PUT FILE ERROR operation
+					if (!pFile->is_open())
+						if (forcewrite(clieFd, buf, 2048) < 0)
 							perror("write() error");
 				}
 
