@@ -10,6 +10,8 @@
 #include <set>
 #include <fstream>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
 #include "../include/netutils.h"
 #include "../include/strutils.h"
 
@@ -50,6 +52,8 @@ int main() {
 	char buf[2048], tempBuf[128];
 	std::ofstream *pFile = NULL;
 	long decoded, fileSize = -1;
+	DIR *dp;
+	struct dirent *de;
 
 	while (1) {
 		int readyNum;
@@ -103,8 +107,11 @@ int main() {
 					fputs("client has closed the connection\n", stdout);
 
 					if (permanentIds.find(clientId) == permanentIds.end()) {
-						// TODO: delete all files belongs to that client id
-						// http://stackoverflow.com/questions/612097/how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+						dp = opendir(".");
+						while ((de = readdir(dp)))
+							if (!memcmp(de->d_name, clientId.c_str(), 5))
+								unlink(de->d_name);
+						closedir(dp);
 					}
 
 					if (close(clieFd) < 0)
@@ -181,7 +188,8 @@ int main() {
 					}
 					else {
 						strcpy(buf, "ME"); // MESSAGE PRINT STDERR operation
-						strcat(buf, "server's file and client's file are different\n"); // message to print
+						strcat(buf, "server's file and client's file are different\n");
+								// message to print
 						if (forcewrite(clieFd, buf, 2048) < 0)
 							perror("write() error");
 					}
@@ -189,8 +197,20 @@ int main() {
 				}
 
 				else if (!memcmp(buf, "LR", 2)) { // LIST FILES REQUEST operation
+					memcpy(tempBuf, buf + 2, 5); // client id as prefix of file name
+					tempBuf[5] = 0;
 					strcpy(buf, "MP"); // MESSAGE PRINT STDOUT operation
-					// TODO: list all files belongs to that client id
+
+					dp = opendir(".");
+					while ((de = readdir(dp))) {
+						if (!memcmp(de->d_name, tempBuf, 5)) {
+							strcat(buf, de->d_name + 5); // message to print
+							strcat(buf, "\n"); // message to print
+						}
+					}
+					closedir(dp);
+
+					strcat(buf, "LIST succeeded\n"); // message to print
 					if (forcewrite(clieFd, buf, 2048) < 0)
 						perror("write() error");
 				}
@@ -200,7 +220,11 @@ int main() {
 					tempBuf[5] = 0;
 
 					if (permanentIds.find(clientId) == permanentIds.end()) {
-						// TODO: delete all files belongs to that client id
+						dp = opendir(".");
+						while ((de = readdir(dp)))
+							if (!memcmp(de->d_name, clientId.c_str(), 5))
+								unlink(de->d_name);
+						closedir(dp);
 					}
 					permanentIds.insert(tempBuf);
 

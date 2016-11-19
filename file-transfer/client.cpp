@@ -8,6 +8,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <fstream>
+#include <unistd.h>
 #include "../include/netutils.h"
 #include "../include/strutils.h"
 
