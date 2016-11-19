@@ -88,38 +88,40 @@ int main(int argc, char **argv) {
 				struct stat statBuf;
 				if (!file.is_open())
 					fprintf(stderr, "cannot read %s\n", tokens[1].c_str());
-				if (stat(tokens[1].c_str(), &statBuf) < 0)
+				else if (stat(tokens[1].c_str(), &statBuf) < 0)
 					perror("stat() error");
 
-				strcpy(buf, "PI"); // PUT FILE INITIALIZE operation
-				sprintf(tempBuf, "%05d", (int) tokens[2].size() + 5);
-				strcat(buf, tempBuf); // length of file name, 5 bytes
-				strcat(buf, clientId); // client id as prefix of file name
-				strcat(buf, tokens[2].c_str()); // original file name
-				sprintf(tempBuf, "%010d", (int) statBuf.st_size);
-				strcat(buf, tempBuf); // length of file, 10 bytes
-
-				if (forcewrite(sockFd, buf, 2048) < 0)
-					perror("write() error");
-
-				while (file.good()) {
-					file.read(buf + 7, 1920); // data to send
-					strcpy(buf, "PD"); // PUT FILE DATA operation
-					sprintf(tempBuf, "%05d", (int) file.gcount());
-					memcpy(buf + 2, tempBuf, 5); // length of data, 5 bytes
+				else {
+					strcpy(buf, "PI"); // PUT FILE INITIALIZE operation
+					sprintf(tempBuf, "%05d", (int) tokens[2].size() + 5);
+					strcat(buf, tempBuf); // length of file name, 5 bytes
+					strcat(buf, clientId); // client id as prefix of file name
+					strcat(buf, tokens[2].c_str()); // original file name
+					sprintf(tempBuf, "%010d", (int) statBuf.st_size);
+					strcat(buf, tempBuf); // length of file, 10 bytes
 
 					if (forcewrite(sockFd, buf, 2048) < 0)
 						perror("write() error");
+
+					while (file.good()) {
+						file.read(buf + 7, 1920); // data to send
+						strcpy(buf, "PD"); // PUT FILE DATA operation
+						sprintf(tempBuf, "%05d", (int) file.gcount());
+						memcpy(buf + 2, tempBuf, 5); // length of data, 5 bytes
+
+						if (forcewrite(sockFd, buf, 2048) < 0)
+							perror("write() error");
+					}
+
+					strcpy(buf, "PF"); // PUT FILE FINALIZE operation
+					sprintf(tempBuf, "PUT %s %s succeeded\n", tokens[1].c_str(), tokens[2].c_str());
+					strcat(buf, tempBuf); // success message
+
+					if (forcewrite(sockFd, buf, 2048) < 0)
+						perror("write() error");
+
+					file.close();
 				}
-
-				strcpy(buf, "PF"); // PUT FILE FINALIZE operation
-				sprintf(tempBuf, "PUT %s %s succeeded\n", tokens[1].c_str(), tokens[2].c_str());
-				strcat(buf, tempBuf); // success message
-
-				if (forcewrite(sockFd, buf, 2048) < 0)
-					perror("write() error");
-
-				file.close();
 			}
 
 			else if (tokens.front() == "GET" && tokens.size() == 3) {
@@ -128,16 +130,18 @@ int main(int argc, char **argv) {
 				if (!pFile->is_open())
 					fprintf(stderr, "cannot write %s\n", tokens[2].c_str());
 
-				strcpy(buf, "GI"); // GET FILE INITIALIZE operation
-				sprintf(tempBuf, "%05d", (int) tokens[1].size() + 5);
-				strcat(buf, tempBuf); // length of file name, 5 bytes
-				strcat(buf, clientId); // client id as prefix of file name
-				strcat(buf, tokens[1].c_str()); // original file name
-				sprintf(tempBuf, "GET %s %s succeeded\n", tokens[1].c_str(), tokens[2].c_str());
-				strcat(buf, tempBuf); // success message
+				else {
+					strcpy(buf, "GI"); // GET FILE INITIALIZE operation
+					sprintf(tempBuf, "%05d", (int) tokens[1].size() + 5);
+					strcat(buf, tempBuf); // length of file name, 5 bytes
+					strcat(buf, clientId); // client id as prefix of file name
+					strcat(buf, tokens[1].c_str()); // original file name
+					sprintf(tempBuf, "GET %s %s succeeded\n", tokens[1].c_str(), tokens[2].c_str());
+					strcat(buf, tempBuf); // success message
 
-				if (forcewrite(sockFd, buf, 2048) < 0)
-					perror("write() error");
+					if (forcewrite(sockFd, buf, 2048) < 0)
+						perror("write() error");
+				}
 			}
 
 			else if (tokens.front() == "LIST" && tokens.size() == 1) {
