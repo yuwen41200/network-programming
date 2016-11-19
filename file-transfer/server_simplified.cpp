@@ -220,7 +220,6 @@ int main() {
 				else if (!memcmp(buf, "IS", 2)) { // CLIENT ID SET operation
 					memcpy(tempBuf, buf + 2, 5); // client id, 5 bytes
 					tempBuf[5] = 0;
-					clientId = tempBuf;
 
 					if (!permanentId) {
 						dp = opendir(".");
@@ -230,6 +229,8 @@ int main() {
 						closedir(dp);
 					}
 					permanentId = true;
+
+					clientId = tempBuf;
 				}
 
 				else {
