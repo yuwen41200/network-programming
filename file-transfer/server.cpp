@@ -41,7 +41,7 @@ int main() {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> dis(0, 99999);
-	std::map<std::string, int> clients;
+	std::multimap<std::string, int> clients;
 	std::set<std::string> permanentIds;
 
 	fd_set allFds;
@@ -75,8 +75,8 @@ int main() {
 			while (1) {
 				int rdNum = dis(gen);
 				sprintf(key, "%05d", rdNum);
-				if (clients.find(key) == clients.end()) {
-					clients[key] = connFd;
+				if (clients.find(key) == clients.end() && permanentIds.find(key) == permanentIds.end()) {
+					clients.insert(std::make_pair(key, connFd));
 					break;
 				}
 			}
@@ -231,7 +231,7 @@ int main() {
 
 					len = 0;
 					it = clients.erase(it);
-					clients[tempBuf] = clieFd;
+					clients.insert(std::make_pair(tempBuf, clieFd));
 				}
 
 				else {
