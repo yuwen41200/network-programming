@@ -166,7 +166,8 @@ int main() {
 					tempBuf[decoded] = 0;
 					fileSize = strtol(buf + 7 + decoded, NULL, 10); // length of file, 10 bytes
 
-					pFile = new std::ofstream(tempBuf, std::ios::out | std::ios::trunc | std::ios::binary);
+					pFile = new std::ofstream(tempBuf,
+							std::ios::out | std::ios::trunc | std::ios::binary);
 					strcpy(buf, "PE"); // PUT FILE ERROR operation
 					if (!pFile->is_open())
 						if (forcewrite(clieFd, buf, 2048) < 0)

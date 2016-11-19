@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
 	char tempBuf[128];
 	std::ofstream *pFile = NULL;
 	long decoded;
+	std::string tempName;
 
 	while (1) {
 		fd_set readFds;
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
 				}
 
 				strcpy(buf, "PF"); // PUT FILE FINALIZE operation
-				sprintf(tempBuf, "PUT %s %s succeeded\n", tokens[1], tokens[2]);
+				sprintf(tempBuf, "PUT %s %s succeeded\n", tokens[1].c_str(), tokens[2].c_str());
 				strcat(buf, tempBuf); // success message
 
 				if (forcewrite(sockFd, buf, 2048) < 0)
@@ -122,6 +123,7 @@ int main(int argc, char **argv) {
 			}
 
 			else if (tokens.front() == "GET" && tokens.size() == 3) {
+				tempName = tokens[2];
 				pFile = new std::ofstream(tokens[2], std::ios::out | std::ios::trunc | std::ios::binary);
 				if (!pFile->is_open())
 					fprintf(stderr, "cannot write %s\n", tokens[2].c_str());
@@ -131,7 +133,7 @@ int main(int argc, char **argv) {
 				strcat(buf, tempBuf); // length of file name, 5 bytes
 				strcat(buf, clientId); // client id as prefix of file name
 				strcat(buf, tokens[1].c_str()); // original file name
-				sprintf(tempBuf, "GET %s %s succeeded\n", tokens[1], tokens[2]);
+				sprintf(tempBuf, "GET %s %s succeeded\n", tokens[1].c_str(), tokens[2].c_str());
 				strcat(buf, tempBuf); // success message
 
 				if (forcewrite(sockFd, buf, 2048) < 0)
@@ -177,6 +179,7 @@ int main(int argc, char **argv) {
 			else if (!memcmp(buf, "GE", 2)) { // GET FILE ERROR operation
 				fprintf(stderr, "failed to receive the designated file\n");
 				pFile->close();
+				unlink(tempName.c_str());
 			}
 
 			else if (!memcmp(buf, "GD", 2)) { // GET FILE DATA operation
@@ -201,7 +204,7 @@ int main(int argc, char **argv) {
 				fputs(buf + 2, stdout); // message to print
 
 			else if (!memcmp(buf, "ME", 2)) // MESSAGE PRINT STDERR operation
-				fprintf(stderr, buf + 2); // message to print
+				fputs(buf + 2, stderr); // message to print
 
 			else
 				fprintf(stderr, "invalid response\n");
