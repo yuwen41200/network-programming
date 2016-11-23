@@ -67,7 +67,7 @@ int main() {
 				continue;
 		}
 
-		for (int i = 1; i <= maxClient; ++i) {
+		for (unsigned i = 1; i <= maxClient; ++i) {
 			int clieFd = clients[i].fd;
 			if (clieFd < 0)
 				continue;
