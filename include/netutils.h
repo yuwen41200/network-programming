@@ -4,7 +4,12 @@
 #include <errno.h>
 #include <unistd.h>
 
+#ifdef __cplusplus
 ssize_t	forceread(int fd, void *ptr, size_t size, bool text_mode = true) {
+#else
+ssize_t	forceread(int fd, void *ptr, size_t size) {
+	int text_mode = 1;
+#endif
 	size_t size_left = size;
 	ssize_t	size_read;
 	while (size_left > 0) {
