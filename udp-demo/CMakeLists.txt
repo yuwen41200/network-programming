@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.6)
+project(udp_demo)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
+set(SRC_CLI client.c)
+set(SRC_SRV server.c)
+add_executable(client ${SRC_CLI})
+add_executable(server ${SRC_SRV})

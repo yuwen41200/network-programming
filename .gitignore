@@ -16,5 +16,6 @@ hs_err_pid*
 *.out
 
 # IntelliJ IDEA Project Files
-.idea/
 *.iml
+.idea/
+cmake-build-debug/
