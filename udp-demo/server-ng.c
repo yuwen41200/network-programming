@@ -1,7 +1,10 @@
 #include <arpa/inet.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <unistd.h>
+#include "../include/netutils.h"
 
 void handler(int signum) {
 	while (waitpid(-1, NULL, WNOHANG) > 0);
@@ -48,6 +51,61 @@ int main() {
 	int maxFd = tcpFd > udpFd ? tcpFd : udpFd;
 
 	while (1) {
-		// TODO
+		ssize_t len;
+		char buf[4096];
+		FD_SET(tcpFd, &fds);
+		FD_SET(udpFd, &fds);
+
+		if (select(maxFd + 1, &fds, NULL, NULL, NULL) < 0) {
+			if (errno == EINTR)
+				continue;
+			else
+				perror("select() error");
+		}
+
+		if (FD_ISSET(tcpFd, &fds)) {
+			int connFd;
+			if ((connFd = accept(tcpFd, (struct sockaddr *) NULL, NULL)) < 0)
+				perror("accept() error");
+
+			pid_t pid;
+			if ((pid = fork()) < 0)
+				perror("fork() error");
+
+			if (pid == 0) {
+				if (close(tcpFd) < 0)
+					perror("close() error");
+
+				while (1) {
+					if ((len = forceread(connFd, buf, 4096)) < 0)
+						perror("read() error");
+
+					if (len == 0)
+						break;
+
+					if (forcewrite(connFd, buf, (size_t) len) < 0)
+						perror("write() error");
+				}
+
+				if (close(connFd) < 0)
+					perror("close() error");
+
+				_exit(0);
+			}
+
+			if (close(connFd) < 0)
+				perror("close() error");
+		}
+
+		if (FD_ISSET(udpFd, &fds)) {
+			struct sockaddr_in cliAddr;
+			socklen_t addrLen = sizeof(cliAddr);
+
+			if ((len = recvfrom(udpFd, buf, 4096, 0, (struct sockaddr *) &cliAddr, &addrLen)) < 0)
+				perror("recvfrom() error");
+
+			if (sendto(udpFd, buf, (size_t) len, 0, (const struct sockaddr *) &cliAddr, addrLen) < 0)
+				perror("sendto() error");
+		}
 	}
 }
