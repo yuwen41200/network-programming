@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 3.6)
-project(c_demo_adv)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic")
-set(SRC_CLI cli.c)
-set(SRC_SRV srv.c)
-add_executable(cli ${SRC_CLI})
-add_executable(srv ${SRC_SRV})
