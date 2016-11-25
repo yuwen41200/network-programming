@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(chatroom)
+project(chat_room)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic")
 set(SRC_CLI client.cpp)
 set(SRC_SRV server.cpp)
