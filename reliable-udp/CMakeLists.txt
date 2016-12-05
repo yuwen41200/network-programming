@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.6)
+project(reliable_udp)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+add_executable(sender3 sender3.cpp)
