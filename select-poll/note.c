@@ -54,3 +54,33 @@ void freeaddrinfo(struct addrinfo *res);
 int getnameinfo(const struct sockaddr *sa, socklen_t salen,
                 char *host, socklen_t hostlen,
                 char *serv, socklen_t servlen, int flags);
+
+/**
+ * newer conversion functions
+ */
+
+#include <unistd.h>
+#include <sys/uio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+ssize_t read(int fd, void *buf, size_t len);
+ssize_t write(int fd, const void *buf, size_t len);
+
+ssize_t readv(int fd, const struct iovec *iov, int iov_len);
+ssize_t writev(int fd, const struct iovec *iov, int iov_len);
+
+ssize_t recv(int fd, void *buf, size_t len, int flags);
+ssize_t send(int fd, const void *buf, size_t len, int flags);
+
+ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
+                 struct sockaddr *src_addr, socklen_t *addr_len);
+ssize_t sendto(int fd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addr_len);
+
+ssize_t recvmsg(int fd, struct msghdr *msg, int flags);
+ssize_t sendmsg(int fd, const struct msghdr *msg, int flags);
+
+/**
+ * comparison of socket I/O functions
+ */
