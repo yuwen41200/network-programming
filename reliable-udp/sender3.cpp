@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in sa;
 	bzero(&sa, sizeof(sa));
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons((uint16_t) strtoul(argv[2], NULL, 0));
+	sa.sin_port = htons((uint16_t) strtoul(argv[2], NULL, 10));
 	if (inet_pton(AF_INET, argv[1], &sa.sin_addr) <= 0)
 		perror("inet_pton() error");
 
@@ -103,7 +103,7 @@ void sendWindow(int fd, unsigned baseSeqNo, const char *data, unsigned dataLen) 
 			// ACK_NO
 			//   acknowledgement number, in text, 8 bytes
 			buf[8] = 0;
-			unsigned no = (unsigned) strtoul(buf, NULL, 0);
+			unsigned no = (unsigned) strtoul(buf, NULL, 10);
 
 			if (no < baseSeqNo)
 				continue;

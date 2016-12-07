@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in sa;
 	bzero(&sa, sizeof(sa));
 	sa.sin_family = AF_INET;
-	sa.sin_port = htons((uint16_t) strtoul(argv[1], NULL, 0));
+	sa.sin_port = htons((uint16_t) strtoul(argv[1], NULL, 10));
 	sa.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (bind(fd, (const struct sockaddr *) &sa, sizeof(sa)) < 0)
@@ -75,7 +75,7 @@ void recvWindow(int fd, unsigned baseSeqNo, char *data, unsigned *dataLen) {
 		// SEQ_NO
 		//   sequence number, in text, 8 bytes
 		buf[8] = 0;
-		unsigned no = (unsigned) strtoul(buf, NULL, 0);
+		unsigned no = (unsigned) strtoul(buf, NULL, 10);
 
 		caLen = sizeof(ca);
 		if (recvfrom(fd, buf, 16, MSG_PEEK, (struct sockaddr *) &ca, &caLen) < 0)
@@ -84,7 +84,7 @@ void recvWindow(int fd, unsigned baseSeqNo, char *data, unsigned *dataLen) {
 		// LEN
 		//   length of data, in text, 8 bytes
 		buf[16] = 0;
-		unsigned len = (unsigned) strtoul(buf + 8, NULL, 0);
+		unsigned len = (unsigned) strtoul(buf + 8, NULL, 10);
 
 		caLen = sizeof(ca);
 		if (recvfrom(fd, buf, len + 16, 0, (struct sockaddr *) &ca, &caLen) < 0)
@@ -111,11 +111,11 @@ void recvWindow(int fd, unsigned baseSeqNo, char *data, unsigned *dataLen) {
 				perror("sendto() error");
 			continue;
 		}
-		remainingPackets.erase(it);
 
 		// DATA
 		//   data, in binary, LEN bytes
 		memcpy(data + *it * 1008, buf + 16, len);
+		remainingPackets.erase(it);
 		*dataLen += len;
 
 		// ACK_NO
