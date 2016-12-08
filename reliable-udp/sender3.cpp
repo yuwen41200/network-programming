@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
 	struct timeval tv;
 	tv.tv_sec = 0;
-	tv.tv_usec = 500000;
+	tv.tv_usec = 75000;
 	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt() error");
 
