@@ -8,12 +8,15 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 char buf[1024];
 char tmp[256];
 
 void sendWindow(int fd, unsigned baseSeqNo, const char *data, unsigned dataLen);
 void finalize(int fd);
+void handler(int signum);
 
 int main(int argc, char **argv) {
 	if (argc != 4)
@@ -30,11 +33,13 @@ int main(int argc, char **argv) {
 	if (inet_pton(AF_INET, argv[1], &sa.sin_addr) <= 0)
 		perror("inet_pton() error");
 
-	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 500000;
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
-		perror("setsockopt() error");
+	struct sigaction act;
+	act.sa_handler = handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	if (sigaction(SIGALRM, &act, NULL) < 0)
+		perror("sigaction() error");
+	siginterrupt(SIGALRM, 1);
 
 	if (connect(fd, (const struct sockaddr *) &sa, sizeof(sa)) < 0)
 		perror("connect() error");
@@ -93,12 +98,15 @@ void sendWindow(int fd, unsigned baseSeqNo, const char *data, unsigned dataLen) 
 			}
 
 			// receive the packet, always 8 bytes
+			ualarm(500000, 0);
 			if (recv(fd, buf, 8, 0) < 0) {
-				if (errno == EWOULDBLOCK)
+				ualarm(0, 0);
+				if (errno == EINTR)
 					break;
 				else
 					perror("recv() error");
 			}
+			ualarm(0, 0);
 
 			// ACK_NO
 			//   acknowledgement number, in text, 8 bytes
@@ -128,11 +136,14 @@ void finalize(int fd) {
 		if (send(fd, buf, 8, 0) < 0)
 			perror("send() error");
 
+		ualarm(500000, 0);
 		if (recv(fd, buf, 8, 0) < 0) {
-			if (errno != EWOULDBLOCK)
+			if (errno != EINTR)
 				perror("recv() error");
+			ualarm(0, 0);
 			continue;
 		}
+		ualarm(0, 0);
 
 		// FIN_ACK
 		//   receiver got it, in text, 8 bytes
@@ -140,4 +151,8 @@ void finalize(int fd) {
 		if (!memcmp(buf, tmp, 8))
 			break;
 	}
+}
+
+void handler(int signum) {
+	return;
 }
