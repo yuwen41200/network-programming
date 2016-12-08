@@ -14,6 +14,7 @@ char tmp[256];
 
 void sendWindow(int fd, unsigned baseSeqNo, const char *data, unsigned dataLen);
 void finalize(int fd);
+ssize_t recvTimeout(int fd, void *buf, size_t n, int flags);
 
 int main(int argc, char **argv) {
 	if (argc != 4)
@@ -29,12 +30,6 @@ int main(int argc, char **argv) {
 	sa.sin_port = htons((uint16_t) strtoul(argv[2], NULL, 10));
 	if (inet_pton(AF_INET, argv[1], &sa.sin_addr) <= 0)
 		perror("inet_pton() error");
-
-	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = 500000;
-	if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
-		perror("setsockopt() error");
 
 	if (connect(fd, (const struct sockaddr *) &sa, sizeof(sa)) < 0)
 		perror("connect() error");
@@ -93,11 +88,11 @@ void sendWindow(int fd, unsigned baseSeqNo, const char *data, unsigned dataLen) 
 			}
 
 			// receive the packet, always 8 bytes
-			if (recv(fd, buf, 8, 0) < 0) {
+			if (recvTimeout(fd, buf, 8, 0) < 0) {
 				if (errno == EWOULDBLOCK)
 					break;
 				else
-					perror("recv() error");
+					perror("recvTimeout() error");
 			}
 
 			// ACK_NO
@@ -128,9 +123,9 @@ void finalize(int fd) {
 		if (send(fd, buf, 8, 0) < 0)
 			perror("send() error");
 
-		if (recv(fd, buf, 8, 0) < 0) {
+		if (recvTimeout(fd, buf, 8, 0) < 0) {
 			if (errno != EWOULDBLOCK)
-				perror("recv() error");
+				perror("recvTimeout() error");
 			continue;
 		}
 
@@ -140,4 +135,24 @@ void finalize(int fd) {
 		if (!memcmp(buf, tmp, 8))
 			break;
 	}
+}
+
+ssize_t recvTimeout(int fd, void *buf, size_t n, int flags) {
+	fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 500000;
+
+	int val = select(fd + 1, &fds, NULL, NULL, &tv);
+	if (val == 0) {
+		errno = EWOULDBLOCK;
+		return -1;
+	}
+	else if (val < 0)
+		return val;
+	else
+		return recv(fd, buf, n, flags);
 }
