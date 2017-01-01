@@ -11,8 +11,10 @@ int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 int fcntl(int fd, int cmd, ... /* arg */ );
+int ioctl(int fd, unsigned long request, ... /* arg */ );
 
 /**
  * commonly used file descriptor operations:
