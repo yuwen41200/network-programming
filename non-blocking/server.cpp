@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in srvAddr;
 	bzero(&srvAddr, sizeof(srvAddr));
 	srvAddr.sin_family = AF_INET;
-	srvAddr.sin_port = htons((uint16_t) std::stoul(argv[1], NULL, 0));
+	srvAddr.sin_port = htons((uint16_t) std::stoul(argv[1]));
 	srvAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (bind(sockFd, (const struct sockaddr *) &srvAddr, sizeof(srvAddr)) < 0) {

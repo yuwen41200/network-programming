@@ -32,6 +32,8 @@ std::string Connection::getFile() {
 			tempBuf[decoded] = 0;
 			fileSize = strtol(buf + 7 + decoded, NULL, 10); // length of file, 10 bytes
 			cliFilename = cliName + tempBuf;
+			if (ofs.is_open())
+				ofs.close();
 			ofs.open(cliFilename, std::ios::out | std::ios::trunc | std::ios::binary);
 		}
 
