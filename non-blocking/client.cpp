@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include "../include/netutils.h"
-#include "../include/strutils.h"
 
 int main(int argc, char **argv) {
 	if (argc != 4) {

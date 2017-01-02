@@ -25,8 +25,16 @@ private:
 	ssize_t len;
 	long decoded;
 
+	void *ptr;
+	size_t size_left;
+	ssize_t	size_read;
+	ssize_t size_written;
+
 	int extStat;
 	int intStat;
+
+	ssize_t	forceread(int, void *, size_t);
+	ssize_t	forcewrite(int, void *, size_t);
 
 public:
 	void init(int, std::string);

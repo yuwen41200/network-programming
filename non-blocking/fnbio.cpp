@@ -1,8 +1,8 @@
 #include <sys/stat.h>
+#include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <fstream>
-#include "../include/netutils.h"
-#include "../include/strutils.h"
 #include "fnbio.h"
 
 void Connection::init(int cliFd, std::string cliName) {
@@ -18,7 +18,7 @@ bool Connection::isAlive() {
 }
 
 std::string Connection::getFile() {
-	if ((len = forceread(cliFd, buf, 2048, false)) <= 0) {
+	if ((len = forceread(cliFd, buf, 2048)) <= 0) {
 		if (len == 0)
 			alive = false;
 	}
@@ -117,7 +117,7 @@ bool Connection::putFile(std::string filename) {
 }
 
 std::string Connection::getName() {
-	if ((len = forceread(cliFd, buf, 2048, false)) <= 0) {
+	if ((len = forceread(cliFd, buf, 2048)) <= 0) {
 		if (len == 0)
 			alive = false;
 	}
@@ -132,4 +132,92 @@ std::string Connection::getName() {
 	}
 
 	return "";
+}
+
+ssize_t	Connection::forceread(int fd, void *new_ptr, size_t size) {
+	switch (intStat) {
+		case 0:
+			goto INT_STAT_0;
+		case 1:
+			goto INT_STAT_1;
+		default:
+			intStat = 0;
+			goto INT_STAT_0;
+	}
+
+	INT_STAT_0:
+	ptr = new_ptr;
+	size_left = size;
+
+	INT_STAT_1:
+	if (size_left > 0) {
+		size_read = read(fd, ptr, size_left);
+		if (size_read < 0) {
+			if (errno == EINTR)
+				size_read = 0;
+			else if (errno == EWOULDBLOCK || errno == EAGAIN)
+				return -1;
+			else {
+				perror("read() error");
+				return -1;
+			}
+		}
+		else if (size_read == 0)
+			return 0;
+		size_left -= size_read;
+		ptr = (char *) ptr + size_read;
+	}
+
+	if (size_left > 0) {
+		intStat = 1;
+		return -1;
+	}
+	else {
+		intStat = 0;
+		return 1;
+	}
+}
+
+ssize_t	Connection::forcewrite(int fd, void *new_ptr, size_t size) {
+	switch (intStat) {
+		case 0:
+			goto INT_STAT_0;
+		case 1:
+			goto INT_STAT_1;
+		default:
+			intStat = 0;
+			goto INT_STAT_0;
+	}
+
+	INT_STAT_0:
+	ptr = new_ptr;
+	size_left = size;
+
+	INT_STAT_1:
+	if (size_left > 0) {
+		size_written = write(fd, ptr, size_left);
+		if (size_written < 0) {
+			if (errno == EINTR)
+				size_written = 0;
+			else if (errno == EWOULDBLOCK || errno == EAGAIN)
+				return -1;
+			else {
+				perror("write() error");
+				return -1;
+			}
+		}
+		else if (size_written == 0)
+			return -1;
+		size_left -= size_written;
+		ptr = (char *) ptr + size_written;
+	}
+
+	if (size_left > 0) {
+		intStat = 1;
+		return -1;
+	}
+	else {
+		intStat = 0;
+		return 1;
+	}
 }
