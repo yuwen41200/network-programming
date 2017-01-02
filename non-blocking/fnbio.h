@@ -1,16 +1,28 @@
-//
-// Created by yuwen41200 on 2017/1/2.
-//
+/**
+ * FILE TRANSFER USING NON-BLOCKING INPUT/OUTPUT
+ */
 
-#ifndef NON_BLOCKING_FNBIO_H
-#define NON_BLOCKING_FNBIO_H
+#ifndef _FNBIO_H
+#define _FNBIO_H
 
+#include <string>
 
+class Connection {
+private:
+	bool alive = true;
+	int cliFd;
+	char buf[2048];
+	char tempBuf[128];
+	long decoded;
+	long fileSize = -1;
+	std::ofstream *pFile = NULL;
 
-class fnbio {
-
+public:
+	void init(int);
+	bool isAlive();
+	std::string getFile();
+	bool putFile(std::string);
+	std::string getName();
 };
 
-
-
-#endif //NON_BLOCKING_FNBIO_H
+#endif
