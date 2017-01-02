@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 		else if (errno != EWOULDBLOCK && errno != EAGAIN)
 			perror("accept() error");
 
-		for (auto client: clients) {
+		for (auto& client: clients) {
 			DIR *dp;
 			struct dirent *de;
 			std::string str;
@@ -95,11 +95,12 @@ int main(int argc, char **argv) {
 				break;
 			}
 
-			else if (client.second.jobQueue.empty())
+			else if (client.second.jobQueue.empty()) {
 				if ((str = client.second.conn.getFile()) != "")
-					for (auto i: clients)
+					for (auto& i: clients)
 						if (i.second.name == client.second.name && i.first != client.first)
 							i.second.jobQueue.push_back(str);
+			}
 
 			else if (client.second.jobQueue.front() == "magic_string_pending") {
 				if ((str = client.second.conn.getName()) != "") {
@@ -115,9 +116,10 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			else if ((str = client.second.jobQueue.front()) != "")
+			else if ((str = client.second.jobQueue.front()) != "") {
 				if (client.second.conn.putFile(str))
 					client.second.jobQueue.pop_front();
+			}
 		}
 	}
 }

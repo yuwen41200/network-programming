@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
 			}
 
 			else if (tokens.front() == "/sleep" && tokens.size() == 2) {
-				decoded = strtol(tokens[1], NULL, 10);
+				decoded = stol(tokens[1]);
 				fprintf(stdout, "Client starts to sleep.\n");
 
 				for (int i = 1; i <= decoded; ++i) {

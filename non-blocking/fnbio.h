@@ -25,6 +25,9 @@ private:
 	ssize_t len;
 	long decoded;
 
+	int extStat;
+	int intStat;
+
 public:
 	void init(int, std::string);
 	bool isAlive();
