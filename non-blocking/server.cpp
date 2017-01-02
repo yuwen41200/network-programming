@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 
 			clients[connFd].name = "magic_string_pending";
 			clients[connFd].jobQueue.push_back("magic_string_pending");
-			clients[connFd].conn.init(connFd);
+			clients[connFd].conn.init(connFd, "magic_string_pending");
 		}
 
 		else if (errno != EWOULDBLOCK && errno != EAGAIN)
@@ -105,6 +105,7 @@ int main(int argc, char **argv) {
 				if ((str = client.second.conn.getName()) != "") {
 					client.second.name = str;
 					client.second.jobQueue.pop_front();
+					client.second.conn.init(client.first, str);
 
 					dp = opendir(".");
 					while ((de = readdir(dp)))
