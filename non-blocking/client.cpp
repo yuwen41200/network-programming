@@ -9,6 +9,7 @@
 #include <netdb.h>
 #include <sstream>
 #include <fstream>
+#include <math.h>
 #include <string>
 #include <vector>
 #include "../include/netutils.h"
@@ -46,9 +47,12 @@ int main(int argc, char **argv) {
 
 	char buf[2048];
 	char tempBuf[128];
+	char tempName[128];
 	std::ofstream ofs;
 	bool stdinEof = false;
 	long decoded, fileSize = -1;
+	long progress, portionNo, portionCount;
+	progress = portionNo = portionCount = -1;
 
 	strcpy(buf, "IS"); // CLIENT ID SET operation
 	sprintf(tempBuf, "%05d", (int) strlen(argv[3]));
@@ -57,6 +61,8 @@ int main(int argc, char **argv) {
 
 	if (forcewrite(sockFd, buf, 2048) < 0)
 		perror("write() error");
+
+	fprintf(stdout, "Welcome to the dropbox-like server! %s\n", argv[3]);
 
 	while (1) {
 		fd_set readFds;
@@ -106,6 +112,13 @@ int main(int argc, char **argv) {
 					if (forcewrite(sockFd, buf, 2048) < 0)
 						perror("write() error");
 
+					progress = 0;
+					portionNo = 0;
+					portionCount = lrint(floor(ceil(statBuf.st_size / 1920.0) / 10.0));
+					portionCount = portionCount == 0 ? 1 : portionCount;
+					fprintf(stdout, "Uploading file: %s\n", tokens[1].c_str());
+					fprintf(stdout, "Progress: [..........]");
+
 					while (ifs.good()) {
 						ifs.read(buf + 7, 1920); // data to send
 						strcpy(buf, "PD"); // PUT FILE DATA operation
@@ -114,6 +127,46 @@ int main(int argc, char **argv) {
 
 						if (forcewrite(sockFd, buf, 2048) < 0)
 							perror("write() error");
+
+						portionNo++;
+						if (portionNo == portionCount) {
+							progress++;
+							portionNo = 0;
+							switch (progress) {
+								case 1:
+									fprintf(stdout, "\rProgress: [#.........]");
+									break;
+								case 2:
+									fprintf(stdout, "\rProgress: [##........]");
+									break;
+								case 3:
+									fprintf(stdout, "\rProgress: [###.......]");
+									break;
+								case 4:
+									fprintf(stdout, "\rProgress: [####......]");
+									break;
+								case 5:
+									fprintf(stdout, "\rProgress: [#####.....]");
+									break;
+								case 6:
+									fprintf(stdout, "\rProgress: [######....]");
+									break;
+								case 7:
+									fprintf(stdout, "\rProgress: [#######...]");
+									break;
+								case 8:
+									fprintf(stdout, "\rProgress: [########..]");
+									break;
+								case 9:
+									fprintf(stdout, "\rProgress: [#########.]");
+									break;
+								case 10:
+									fprintf(stdout, "\rProgress: [##########]");
+									break;
+								default:
+									break;
+							}
+						}
 					}
 
 					strcpy(buf, "PF"); // PUT FILE FINALIZE operation
@@ -121,12 +174,22 @@ int main(int argc, char **argv) {
 
 					if (forcewrite(sockFd, buf, 2048) < 0)
 						perror("write() error");
+
+					fprintf(stdout, "\rProgress: [##########]\n");
+					fprintf(stdout, "Upload %s complete!\n", tokens[1].c_str());
 				}
 			}
 
 			else if (tokens.front() == "/sleep" && tokens.size() == 2) {
 				decoded = strtol(tokens[1], NULL, 10);
-				sleep((unsigned) decoded);
+				fprintf(stdout, "Client starts to sleep.\n");
+
+				for (int i = 1; i <= decoded; ++i) {
+					fprintf(stdout, "Sleep %d\n", i);
+					sleep(1);
+				}
+
+				fprintf(stdout, "Client wakes up.\n");
 			}
 
 			else
@@ -154,6 +217,14 @@ int main(int argc, char **argv) {
 				if (ofs.is_open())
 					ofs.close();
 				ofs.open(tempBuf, std::ios::out | std::ios::trunc | std::ios::binary);
+
+				progress = 0;
+				portionNo = 0;
+				portionCount = lrint(floor(ceil(fileSize / 1920.0) / 10.0));
+				portionCount = portionCount == 0 ? 1 : portionCount;
+				fprintf(stdout, "Downloading file: %s\n", tempBuf);
+				fprintf(stdout, "Progress: [..........]");
+				strcpy(tempName, tempBuf);
 			}
 
 			else if (!memcmp(buf, "GD", 2) && ofs.is_open()) { // GET FILE DATA operation
@@ -161,12 +232,55 @@ int main(int argc, char **argv) {
 				tempBuf[5] = 0;
 				decoded = strtol(tempBuf, NULL, 10);
 				ofs.write(buf + 7, decoded); // data to receive
+
+				portionNo++;
+				if (portionNo == portionCount) {
+					progress++;
+					portionNo = 0;
+					switch (progress) {
+						case 1:
+							fprintf(stdout, "\rProgress: [#.........]");
+							break;
+						case 2:
+							fprintf(stdout, "\rProgress: [##........]");
+							break;
+						case 3:
+							fprintf(stdout, "\rProgress: [###.......]");
+							break;
+						case 4:
+							fprintf(stdout, "\rProgress: [####......]");
+							break;
+						case 5:
+							fprintf(stdout, "\rProgress: [#####.....]");
+							break;
+						case 6:
+							fprintf(stdout, "\rProgress: [######....]");
+							break;
+						case 7:
+							fprintf(stdout, "\rProgress: [#######...]");
+							break;
+						case 8:
+							fprintf(stdout, "\rProgress: [########..]");
+							break;
+						case 9:
+							fprintf(stdout, "\rProgress: [#########.]");
+							break;
+						case 10:
+							fprintf(stdout, "\rProgress: [##########]");
+							break;
+						default:
+							break;
+					}
+				}
 			}
 
 			else if (!memcmp(buf, "GF", 2) && ofs.is_open()) { // GET FILE FINALIZE operation
 				if (ofs.tellp() != fileSize)
 					fprintf(stderr, "server's file and client's file are different\n");
 				ofs.close();
+
+				fprintf(stdout, "\rProgress: [##########]\n");
+				fprintf(stdout, "Download %s complete!\n", tempName);
 			}
 
 			else
