@@ -134,7 +134,7 @@ std::string Connection::getName() {
 	return "";
 }
 
-ssize_t	Connection::forceread(int fd, void *new_ptr, size_t size) {
+ssize_t Connection::forceread(int fd, void *new_ptr, size_t size) {
 	switch (intStat) {
 		case 0:
 			goto INT_STAT_0;
@@ -178,7 +178,7 @@ ssize_t	Connection::forceread(int fd, void *new_ptr, size_t size) {
 	}
 }
 
-ssize_t	Connection::forcewrite(int fd, void *new_ptr, size_t size) {
+ssize_t Connection::forcewrite(int fd, void *new_ptr, size_t size) {
 	switch (intStat) {
 		case 0:
 			goto INT_STAT_0;

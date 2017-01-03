@@ -82,13 +82,6 @@ int main(int argc, char **argv) {
 			std::string str;
 
 			if (!client.second.conn.isAlive()) {
-				dp = opendir(".");
-				str = client.second.name;
-				while ((de = readdir(dp)))
-					if (!strncmp(de->d_name, str.c_str(), str.size()))
-						unlink(de->d_name);
-				closedir(dp);
-
 				if (close(client.first) < 0)
 					perror("close() error");
 
