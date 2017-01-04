@@ -117,6 +117,7 @@ int main(int argc, char **argv) {
 					portionCount = portionCount == 0 ? 1 : portionCount;
 					fprintf(stdout, "Uploading file: %s\n", tokens[1].c_str());
 					fprintf(stdout, "Progress: [..........]");
+					fflush(stdout);
 
 					while (ifs.good()) {
 						ifs.read(buf + 7, 1920); // data to send
@@ -134,33 +135,43 @@ int main(int argc, char **argv) {
 							switch (progress) {
 								case 1:
 									fprintf(stdout, "\rProgress: [#.........]");
+									fflush(stdout);
 									break;
 								case 2:
 									fprintf(stdout, "\rProgress: [##........]");
+									fflush(stdout);
 									break;
 								case 3:
 									fprintf(stdout, "\rProgress: [###.......]");
+									fflush(stdout);
 									break;
 								case 4:
 									fprintf(stdout, "\rProgress: [####......]");
+									fflush(stdout);
 									break;
 								case 5:
 									fprintf(stdout, "\rProgress: [#####.....]");
+									fflush(stdout);
 									break;
 								case 6:
 									fprintf(stdout, "\rProgress: [######....]");
+									fflush(stdout);
 									break;
 								case 7:
 									fprintf(stdout, "\rProgress: [#######...]");
+									fflush(stdout);
 									break;
 								case 8:
 									fprintf(stdout, "\rProgress: [########..]");
+									fflush(stdout);
 									break;
 								case 9:
 									fprintf(stdout, "\rProgress: [#########.]");
+									fflush(stdout);
 									break;
 								case 10:
 									fprintf(stdout, "\rProgress: [##########]");
+									fflush(stdout);
 									break;
 								default:
 									break;
@@ -223,6 +234,7 @@ int main(int argc, char **argv) {
 				portionCount = portionCount == 0 ? 1 : portionCount;
 				fprintf(stdout, "Downloading file: %s\n", tempBuf);
 				fprintf(stdout, "Progress: [..........]");
+				fflush(stdout);
 				strcpy(tempName, tempBuf);
 			}
 
@@ -239,33 +251,43 @@ int main(int argc, char **argv) {
 					switch (progress) {
 						case 1:
 							fprintf(stdout, "\rProgress: [#.........]");
+							fflush(stdout);
 							break;
 						case 2:
 							fprintf(stdout, "\rProgress: [##........]");
+							fflush(stdout);
 							break;
 						case 3:
 							fprintf(stdout, "\rProgress: [###.......]");
+							fflush(stdout);
 							break;
 						case 4:
 							fprintf(stdout, "\rProgress: [####......]");
+							fflush(stdout);
 							break;
 						case 5:
 							fprintf(stdout, "\rProgress: [#####.....]");
+							fflush(stdout);
 							break;
 						case 6:
 							fprintf(stdout, "\rProgress: [######....]");
+							fflush(stdout);
 							break;
 						case 7:
 							fprintf(stdout, "\rProgress: [#######...]");
+							fflush(stdout);
 							break;
 						case 8:
 							fprintf(stdout, "\rProgress: [########..]");
+							fflush(stdout);
 							break;
 						case 9:
 							fprintf(stdout, "\rProgress: [#########.]");
+							fflush(stdout);
 							break;
 						case 10:
 							fprintf(stdout, "\rProgress: [##########]");
+							fflush(stdout);
 							break;
 						default:
 							break;
